@@ -1,0 +1,11 @@
+id,cliente_id,check_in,check_out,tipo_habitacion,num_habitacion,num_huespedes,metodo_pago,estado,notas
+1,1,2025-03-01,2025-03-07,Suite,101,2,Tarjeta,Confirmada,Vista al mar
+2,2,2025-03-10,2025-03-15,Doble,202,3,PayPal,Confirmada,Cuna para bebé
+3,3,2025-04-05,2025-04-10,Estándar,303,1,Efectivo,Pendiente,
+4,4,2025-02-20,2025-02-25,Suite,102,2,Tarjeta,Confirmada,
+5,5,2025-05-01,2025-05-10,Doble,204,4,Tarjeta,Pendiente,Descuento aplicado
+6,6,2025-06-15,2025-06-20,Suite,103,2,Efectivo,Confirmada,
+7,7,2025-07-01,2025-07-05,Estándar,305,1,PayPal,Cancelada,Cambio de fechas
+8,8,2025-08-10,2025-08-15,Suite,104,2,Tarjeta,Confirmada,
+9,9,2025-09-05,2025-09-10,Doble,206,3,Efectivo,Pendiente,
+10,10,2025-10-15,2025-10-20,Suite,105,2,Tarjeta,Confirmada,Aniversario
