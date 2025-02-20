@@ -22,3 +22,21 @@ svg {
     margin-left: 10px;
     
 }
+
+table {
+    table-layout: auto;
+    width: 100%;
+}
+th, td {
+    text-align: center;
+    padding: 12px;
+}
+.clickable {
+    cursor: pointer;
+    color: blue;
+    transition: color 0.3s ease;
+}
+.clickable:hover {
+    color: darkblue;
+    font-weight: bold;
+}

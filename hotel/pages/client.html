@@ -1,10 +1,21 @@
-
-<h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="40" stroke-width="2">
+<h1>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    width="40"
+    stroke-width="2"
+  >
     <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path>
     <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path>
     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
     <path d="M21 21v-2a4 4 0 0 0 -3 -3.85"></path>
-  </svg> Client</h1>
+  </svg>
+  Client
+</h1>
 <ul class="nav nav-tabs" id="myTab" role="tablist">
   <li class="nav-item" role="presentation">
     <button
@@ -30,10 +41,13 @@
       role="tab"
       aria-controls="profile-tab-pane"
       aria-selected="false"
+      onclick="loadCSV()"
     >
       Search Client
     </button>
+  </li>
 </ul>
+
 <div class="tab-content" id="myTabContent">
   <div
     class="tab-pane fade show active"
@@ -51,6 +65,81 @@
     aria-labelledby="profile-tab"
     tabindex="0"
   >
-    Aqui se podra buscar clientes existentes y actualizar o borrar a travez de un modal.
+    <div class="table-responsive">
+      <table id="csvTable" class="table table-striped table-bordered">
+        <thead class="table-dark" id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
+<!-- Modal para editar/eliminar información -->
+<div
+  class="modal fade"
+  id="infoModal"
+  tabindex="-1"
+  data-bs-backdrop="static"
+  aria-labelledby="modalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalLabel">Detalles del Registro</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Cerrar"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editIndex" />
+        <div class="mb-3">
+          <label class="form-label">Nombre:</label>
+          <input type="text" class="form-control" id="editNombre" readonly />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Edad:</label>
+          <input type="number" class="form-control" id="editEdad" readonly />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">País:</label>
+          <input type="text" class="form-control" id="editPais" readonly />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button
+          id="btnEditar"
+          type="button"
+          class="btn btn-warning"
+          onclick="habilitarEdicion()"
+        >
+          Editar
+        </button>
+        <button
+          id="btnGuardar"
+          type="button"
+          class="btn btn-primary"
+          onclick="guardarEdicion()"
+          style="display: none"
+        >
+          Guardar Cambios
+        </button>
+        <button
+          id="btnEliminar"
+          type="button"
+          class="btn btn-danger"
+          onclick="eliminarRegistro()"
+        >
+          Eliminar
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

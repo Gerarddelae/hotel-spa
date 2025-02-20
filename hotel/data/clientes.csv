@@ -1,11 +1,11 @@
-id,nombre,email,telefono,documento,fecha_nacimiento,direccion,nacionalidad,preferencias,comentarios
-1,Juan Pérez,juanperez@email.com,+34600111222,12345678A,1985-06-15,"Calle Falsa 123, Madrid",Español,No fumador,
-2,Maria Gonzalez,mariagonzalez@email.com,+34655443322,87654321B,1990-03-22,"Av. Siempre Viva 742, Barcelona",Español,,Viaja con niños
-3,Carlos López,carloslopez@email.com,+33678965432,56789123C,1982-11-10,"Rue de la Paix 10, París",Francés,Accesibilidad,
-4,Ana Torres,ana.torres@email.com,+442012345678,98765432D,1995-08-05,"221B Baker Street, Londres",Inglesa,,
-5,Pedro Martinez,pedromartinez@email.com,+34677889900,11112222E,1988-02-17,"Gran Vía 45, Madrid",Español,Vegan,
-6,Laura Fernández,laura.fernandez@email.com,+498912345678,22223333F,1993-09-28,"Berliner Straße 7, Berlín",Alemana,,
-7,Sofía Méndez,sofia.mendez@email.com,+34987654321,33334444G,2000-05-30,"Calle Mayor 12, Valencia",Español,No fumador,Alérgica a frutos secos
-8,Ricardo Alvarez,ricardo.alvarez@email.com,+5511987654321,44445555H,1979-12-25,"Av. Paulista 1000, São Paulo",Brasileño,,
-9,Emily Johnson,emily.johnson@email.com,+11234567890,55556666I,1997-07-07,"5th Avenue 300, New York",Estadounidense,Accesibilidad,
-10,Miguel Santos,miguel.santos@email.com,+521234567890,66667777J,1984-04-14,"Av. Reforma 150, CDMX",Mexicano,,Viajero frecuente
+id,nombre,email,telefono,documento,fecha_nacimiento,preferencias,comentarios
+1,"Juan Pérez","juanperez@email.com","+34600111222","12345678A","1985-06-15","No fumador",""
+2,"Maria Gonzalez","mariagonzalez@email.com","+34655443322","87654321B","1990-03-22","","Viaja con niños"
+3,"Carlos López","carloslopez@email.com","+33678965432","56789123C","1982-11-10","Accesibilidad",""
+4,"Ana Torres","ana.torres@email.com","+442012345678","98765432D","1995-08-05","",""
+5,"Pedro Martinez","pedromartinez@email.com","+34677889900","11112222E","1988-02-17","Vegan",""
+6,"Laura Fernández","laura.fernandez@email.com","+498912345678","22223333F","1993-09-28","",""
+7,"Sofía Méndez","sofia.mendez@email.com","+34987654321","33334444G","2000-05-30","No fumador","Alérgica a frutos secos"
+8,"Ricardo Alvarez","ricardo.alvarez@email.com","+5511987654321","44445555H","1979-12-25","",""
+9,"Emily Johnson","emily.johnson@email.com","+11234567890","55556666I","1997-07-07","Accesibilidad",""
+10,"Miguel Santos","miguel.santos@email.com","+521234567890","66667777J","1984-04-14","","Viajero frecuente"
