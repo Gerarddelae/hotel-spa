@@ -1,10 +1,24 @@
-const csvFilePath = "data/clientes.csv";
-let datos = [];
+// observar todos los tab pane y agregar un eventlistener click
 
-// Cargar CSV y mostrar la tabla
-async function loadCSV() {
+const tabObserver = new MutationObserver((mutationsList, observer) => {
+    const tabs = document.querySelectorAll("[role='tab']")
+
+    if (tabs.length > 1) {
+        console.log(tabs);
+        //observer.disconnect()
+        tabs.forEach((button) => button.addEventListener("click", (event)=> {
+            console.log(event.target.getAttribute("id"));
+        }))
+    }
+
+})
+tabObserver.observe(document.body, { childList: true, subtree: true });
+
+
+async function loadCSV(path) {
+    
     try {
-        const response = await fetch(csvFilePath);
+        const response = await fetch(path);
         if (!response.ok) throw new Error("No se pudo cargar el archivo CSV");
 
         const text = await response.text();
@@ -20,11 +34,12 @@ async function loadCSV() {
 function createTable() {
     // se crea un observer para poder encontrar los elementos hijos
     const observer = new MutationObserver((mutationsList, observer) => {
+        let datos = [];
         const tableHead = document.getElementById("tableHead");
         const tableBody = document.getElementById("tableBody");
 
         if (tableHead && tableBody) {
-            observer.disconnect();
+           // observer.disconnect();
             tableHead.innerHTML = "";
             tableBody.innerHTML = "";
 
