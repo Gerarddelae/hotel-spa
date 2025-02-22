@@ -8,4 +8,4 @@ num_habitacion,tipo,capacidad,precio_noche,disponibilidad,amenidades,vista,notas
 204,Doble,4,130,Disponible,"WiFi, TV",Jardín,
 206,Doble,3,125,Ocupada,"WiFi, TV",Ciudad,
 303,Estándar,1,80,Disponible,"WiFi",Ciudad,
-305,Estándar,1,85,Ocupada,"WiFi",Jardín,Económica
+305,Estándar,1,85,Ocupada,"WiFi",Jardín,Lujo
