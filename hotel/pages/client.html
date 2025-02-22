@@ -20,12 +20,12 @@
   <li class="nav-item" role="presentation">
     <button
       class="nav-link active"
-      id="home-tab"
+      id="add-client-tab"
       data-bs-toggle="tab"
-      data-bs-target="#home-tab-pane"
+      data-bs-target="#add-client-pane"
       type="button"
       role="tab"
-      aria-controls="home-tab-pane"
+      aria-controls="add-client-pane"
       aria-selected="true"
     >
       Add client
@@ -33,15 +33,17 @@
   </li>
   <li class="nav-item" role="presentation">
     <button
-      class="nav-link"
-      id="profile-tab"
+      class="nav-link search"
+      id="search-client-tab"
       data-bs-toggle="tab"
-      data-bs-target="#profile-tab-pane"
+      data-bs-target="#search-client-pane"
       type="button"
       role="tab"
-      aria-controls="profile-tab-pane"
+      aria-controls="search-client-pane"
       aria-selected="false"
-      onclick='loadCSV("data/clientes.csv")'
+      path="data\clientes.csv"
+      head="clientHead"
+      body="clientBody"
     >
       Search Client
     </button>
@@ -51,7 +53,7 @@
 <div class="tab-content" id="myTabContent">
   <div
     class="tab-pane fade show active"
-    id="home-tab-pane"
+    id="add-client-pane"
     role="tabpanel"
     aria-labelledby="home-tab"
     tabindex="0"
@@ -60,15 +62,15 @@
   </div>
   <div
     class="tab-pane fade"
-    id="profile-tab-pane"
+    id="search-client-pane"
     role="tabpanel"
     aria-labelledby="profile-tab"
     tabindex="0"
   >
     <div class="table-responsive">
       <table id="csvTable" class="table table-striped table-bordered">
-        <thead class="table-dark" id="tableHead"></thead>
-        <tbody id="tableBody"></tbody>
+        <thead class="table-dark" id="clientHead"></thead>
+        <tbody id="clientBody"></tbody>
       </table>
     </div>
   </div>

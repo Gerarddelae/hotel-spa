@@ -20,7 +20,7 @@
     </li>
     <li class="nav-item" role="presentation">
       <button
-        class="nav-link"
+        class="nav-link search"
         id="profile-tab"
         data-bs-toggle="tab"
         data-bs-target="#profile-tab-pane"
@@ -28,6 +28,9 @@
         role="tab"
         aria-controls="profile-tab-pane"
         aria-selected="false"
+        path="data\rooms.csv"
+        head="roomHead"
+        body="roomBody"
       >
         Search Room
       </button>
@@ -49,5 +52,10 @@
       aria-labelledby="profile-tab"
       tabindex="0"
     >
-      Aqui se podra buscar y editar habitaciones existentes
+    <div class="table-responsive">
+      <table id="csvTable" class="table table-striped table-bordered">
+        <thead class="table-dark" id="roomHead"></thead>
+        <tbody id="roomBody"></tbody>
+      </table>
+    </div>
     </div>

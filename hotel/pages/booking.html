@@ -35,7 +35,7 @@
     </li>
     <li class="nav-item" role="presentation">
       <button
-        class="nav-link"
+        class="nav-link search"
         id="profile-tab"
         data-bs-toggle="tab"
         data-bs-target="#profile-tab-pane"
@@ -43,6 +43,9 @@
         role="tab"
         aria-controls="profile-tab-pane"
         aria-selected="false"
+        path="data\booking.csv"
+        head="bookingHead"
+        body="bookingBody"
       >
         Search Reservation
       </button>
@@ -64,6 +67,11 @@
       aria-labelledby="profile-tab"
       tabindex="0"
     >
-      Aqui se podra buscar reservaciones existentes y actualizar o borrar a travez de un modal.
-    </div>
+    <div class="table-responsive">
+      <table id="csvTable" class="table table-striped table-bordered">
+        <thead class="table-dark" id="bookingHead"></thead>
+        <tbody id="bookingBody"></tbody>
+      </table>
+    </div>    
+  </div>
   </div>
