@@ -1,8 +1,19 @@
 document.addEventListener("DOMContentLoaded", function () {
     const sidebarContainer = document.getElementById("sidebar-container");
     const contentContainer = document.getElementById("content");
+    const usuario = localStorage.getItem("usuario");
     
+    const userObserver = new MutationObserver((mutationsList, observer) => {
+       const userContainer = document.getElementById("userContainer")
 
+       if (userContainer) {
+        observer.disconnect()
+        userContainer.innerHTML = usuario
+       }
+   })
+
+   userObserver.observe(document.body, { childList: true, subtree: true });
+   
     // Cargar la barra lateral
     fetch("sidebar.html")
         .then(response => response.text())

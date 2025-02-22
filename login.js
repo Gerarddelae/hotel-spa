@@ -7,9 +7,11 @@ document.addEventListener("DOMContentLoaded", function () {
         // Simulación de credenciales válidas
         const validUser = "admin@hotel.com";
         const validPass = "123456";
-
+        
         // Obtener valores del formulario
         const email = document.getElementById("email").value;
+        const usuario = email.replace(/@.*/, "");
+        localStorage.setItem("usuario", usuario);
         const password = document.getElementById("password").value;
         const errorMessage = document.getElementById("error-message");
 
