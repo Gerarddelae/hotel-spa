@@ -40,3 +40,31 @@ th, td {
     color: darkblue;
     font-weight: bold;
 }
+
+/* Estilos para el encabezado de la tabla en modo claro */
+.custom-header-light th {
+    background-color: #0a0b0b !important; /* Azul */
+    color: white !important;
+    text-align: center;
+}
+
+/* Estilos para el encabezado de la tabla en modo oscuro */
+.custom-header-dark th {
+    background-color: #343a40 !important; /* Gris oscuro */
+    color: white !important;
+    text-align: center;
+}
+
+/* Asegúrate de que los elementos de paginación y el selector de filas por página estén en línea */
+.bootstrap-table .fixed-table-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Ajusta el espacio entre los elementos */
+  .bootstrap-table .fixed-table-pagination .pagination-detail,
+  .bootstrap-table .fixed-table-pagination .page-list {
+    margin: 0 10px;
+  }
+  

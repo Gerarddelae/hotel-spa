@@ -1,95 +1,113 @@
-// observar todos los tab pane y agregar un eventlistener click
 document.addEventListener("DOMContentLoaded", () => {
   const tabObserver = new MutationObserver((mutationsList, observer) => {
     const tabs = document.querySelectorAll(".nav-link.search");
-    if (tabs.length >= 1) {
-      // observer.disconnect()
-      tabs.forEach((button) =>
+    tabs.forEach((button) => {
+      if (!button.hasEventListener) {
         button.addEventListener("click", (event) => {
           const path = event.target.getAttribute("path");
           const head = event.target.getAttribute("head");
           const body = event.target.getAttribute("body");
-          loadCSV(path, head, body);
-        })
-      );
+          if (path && head && body) {
+            loadTableData(path, head, body);
+          } else {
+            console.error("Faltan atributos en el botón:", event.target);
+          }
+        });
+        button.hasEventListener = true; // Marcar el botón para evitar agregar múltiples listeners
+      }
+    });
+  });
+
+  tabObserver.observe(document.body, { childList: true, subtree: true });
+});
+
+async function loadTableData(path, head, body) {
+  try {
+    const jsonUrl = path;
+    const jsonHead = head;
+    const jsonBody = body;
+    console.log("Cargando JSON desde:", jsonUrl);
+    const response = await fetch(jsonUrl);
+    if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+    const data = await response.json();
+    console.log("Datos JSON recibidos:", data.slice(0, 2));
+
+    if (!data.length) throw new Error("El JSON está vacío o mal formateado");
+
+    generateTableHeaders(Object.keys(data[0]), jsonHead);
+    initializeTable(data, jsonBody);
+    applyTableHeaderTheme(head);
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Error al cargar los datos. Revisa la consola.");
+  }
+}
+
+function generateTableHeaders(headers, head) {
+  const tableHead = document.getElementById(head);
+  if (!tableHead) throw new Error("No se encontró tableHead");
+  let tr = tableHead.querySelector("tr");
+  if (!tr) {
+    tr = document.createElement("tr");
+    tableHead.appendChild(tr);
+  }
+  tr.innerHTML = headers
+    .map((header) => `<th data-field="${header}">${header}</th>`)
+    .join("");
+  console.log("Encabezados generados:", headers);
+
+  applyTableHeaderTheme(head);
+}
+
+function initializeTable(data, jsonBody) {
+  console.log("#" + jsonBody);
+  $("#" + jsonBody).bootstrapTable("destroy");
+  $("#" + jsonBody).bootstrapTable({
+    data: data,
+    columns: Object.keys(data[0]).map((key) => ({
+      field: key,
+      title: key,
+      sortable: true,
+    })),
+    onRefresh: function (params) {
+      const path = document.querySelector(".nav-link.search.active").getAttribute("path");
+      const head = document.querySelector(".nav-link.search.active").getAttribute("head");
+      const body = document.querySelector(".nav-link.search.active").getAttribute("body");
+      if (path && head && body) {
+        loadTableData(path, head, body); // Recargar los datos cuando se presione el botón de actualizar
+      }
     }
   });
-  tabObserver.observe(document.body, { childList: true, subtree: true });
 
-  async function loadCSV(path, head, body) {
-    console.log("Cargando CSV desde:", path);
-    try {
-      const response = await fetch(path);
-      if (!response.ok) throw new Error("No se pudo cargar el archivo CSV");
+  console.log("Tabla inicializada con éxito");
+}
 
-      const text = await response.text();
-      datos = text
-        .trim()
-        .split("\n")
-        .map((row) => row.split(","));
+function applyTableHeaderTheme(head) {
+  const body = document.body;
+  const tableHead = document.getElementById(head);
 
-      // Asegúrate de que head y body son válidos antes de llamar a createTable
-      if (head && body) {
-        createTable(head, body);
-      } else {
-        console.warn(
-          "Los atributos head y body no están definidos correctamente."
-        );
-      }
-    } catch (error) {
-      console.error("Error al cargar el CSV:", error);
-    }
+  if (!tableHead) return;
+
+  tableHead.classList.remove("custom-header-light", "custom-header-dark");
+
+  if (body.getAttribute("data-bs-theme") === "dark") {
+    tableHead.classList.add("custom-header-dark");
+  } else {
+    tableHead.classList.add("custom-header-light");
   }
+}
 
-  // Crear la tabla en HTML
-  function createTable(headId, bodyId) {
-    const tableHead = document.getElementById(headId);
-    const tableBody = document.getElementById(bodyId);
-
-    if (!tableHead || !tableBody) {
-      console.error("No se encontraron los elementos de la tabla.");
-      return;
-    }
-
-    // Limpiar contenido anterior
-    tableHead.innerHTML = "";
-    tableBody.innerHTML = "";
-
-    if (!datos || datos.length === 0) {
-      console.warn("No hay datos para mostrar en la tabla.");
-      return;
-    }
-
-    // Crear encabezado
-    const headerRow = document.createElement("tr");
-    datos[0].forEach((cell) => {
-      const th = document.createElement("th");
-      th.textContent = cell.trim();
-      th.classList.add("text-center", "p-3");
-      headerRow.appendChild(th);
-    });
-    tableHead.appendChild(headerRow);
-
-    // Crear el cuerpo de la tabla
-    datos.slice(1).forEach((row, index) => {
-      const tr = document.createElement("tr");
-      row.forEach((cell, colIndex) => {
-        const td = document.createElement("td");
-        td.textContent = cell.trim();
-        td.classList.add("text-center", "p-2");
-
-        // Si es la primera columna, hacerlo "clickable"
-        if (colIndex === 0) {
-          td.classList.add("clickable");
-          td.addEventListener("click", () => mostrarInfo(index + 1));
-        }
-
-        tr.appendChild(td);
-      });
-      tableBody.appendChild(tr);
-    });
-  }
+const observer = new MutationObserver(() => {
+  applyTableHeaderTheme();
 });
+
+observer.observe(document.body, {
+  attributes: true,
+  attributeFilter: ["data-bs-theme"],
+});
+
+
+// logica de aqui hacia abajo por trabajar
 
 // Mostrar información en el modal
 function mostrarInfo(index) {
