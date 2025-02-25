@@ -55,16 +55,5 @@ th, td {
     text-align: center;
 }
 
-/* Asegúrate de que los elementos de paginación y el selector de filas por página estén en línea */
-.bootstrap-table .fixed-table-pagination {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  /* Ajusta el espacio entre los elementos */
-  .bootstrap-table .fixed-table-pagination .pagination-detail,
-  .bootstrap-table .fixed-table-pagination .page-list {
-    margin: 0 10px;
-  }
+
   
