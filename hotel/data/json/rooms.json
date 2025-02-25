@@ -1,0 +1,102 @@
+[
+    {
+      "num_habitacion": 101,
+      "tipo": "Suite",
+      "capacidad": 2,
+      "precio_noche": 150,
+      "disponibilidad": "Disponible",
+      "amenidades": ["WiFi", "TV", "Aire Acondicionado", "Mini Bar"],
+      "vista": "Mar",
+      "notas": ""
+    },
+    {
+      "num_habitacion": 102,
+      "tipo": "Suite",
+      "capacidad": 2,
+      "precio_noche": 160,
+      "disponibilidad": "Ocupada",
+      "amenidades": ["WiFi", "TV", "Aire Acondicionado", "Mini Bar"],
+      "vista": "Mar",
+      "notas": ""
+    },
+    {
+      "num_habitacion": 103,
+      "tipo": "Suite",
+      "capacidad": 2,
+      "precio_noche": 155,
+      "disponibilidad": "Disponible",
+      "amenidades": ["WiFi", "TV", "Mini Bar"],
+      "vista": "Ciudad",
+      "notas": ""
+    },
+    {
+      "num_habitacion": 104,
+      "tipo": "Suite",
+      "capacidad": 2,
+      "precio_noche": 165,
+      "disponibilidad": "Ocupada",
+      "amenidades": ["WiFi", "TV", "Aire Acondicionado", "Mini Bar"],
+      "vista": "Jardín",
+      "notas": ""
+    },
+    {
+      "num_habitacion": 105,
+      "tipo": "Suite",
+      "capacidad": 2,
+      "precio_noche": 170,
+      "disponibilidad": "Disponible",
+      "amenidades": ["WiFi", "TV", "Mini Bar"],
+      "vista": "Mar",
+      "notas": "Lujo"
+    },
+    {
+      "num_habitacion": 202,
+      "tipo": "Doble",
+      "capacidad": 3,
+      "precio_noche": 120,
+      "disponibilidad": "Ocupada",
+      "amenidades": ["WiFi", "TV"],
+      "vista": "Ciudad",
+      "notas": ""
+    },
+    {
+      "num_habitacion": 204,
+      "tipo": "Doble",
+      "capacidad": 4,
+      "precio_noche": 130,
+      "disponibilidad": "Disponible",
+      "amenidades": ["WiFi", "TV"],
+      "vista": "Jardín",
+      "notas": ""
+    },
+    {
+      "num_habitacion": 206,
+      "tipo": "Doble",
+      "capacidad": 3,
+      "precio_noche": 125,
+      "disponibilidad": "Ocupada",
+      "amenidades": ["WiFi", "TV"],
+      "vista": "Ciudad",
+      "notas": ""
+    },
+    {
+      "num_habitacion": 303,
+      "tipo": "Estándar",
+      "capacidad": 1,
+      "precio_noche": 80,
+      "disponibilidad": "Disponible",
+      "amenidades": ["WiFi"],
+      "vista": "Ciudad",
+      "notas": ""
+    },
+    {
+      "num_habitacion": 305,
+      "tipo": "Estándar",
+      "capacidad": 1,
+      "precio_noche": 85,
+      "disponibilidad": "Ocupada",
+      "amenidades": ["WiFi"],
+      "vista": "Jardín",
+      "notas": "Lujo"
+    }
+  ]

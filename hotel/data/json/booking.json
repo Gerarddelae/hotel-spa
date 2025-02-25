@@ -1,0 +1,122 @@
+[
+    {
+      "id": 1,
+      "cliente_id": 1,
+      "check_in": "2025-03-01",
+      "check_out": "2025-03-07",
+      "tipo_habitacion": "Suite",
+      "num_habitacion": 101,
+      "num_huespedes": 2,
+      "metodo_pago": "Tarjeta",
+      "estado": "Confirmada",
+      "notas": "Vista al mar"
+    },
+    {
+      "id": 2,
+      "cliente_id": 2,
+      "check_in": "2025-03-10",
+      "check_out": "2025-03-15",
+      "tipo_habitacion": "Doble",
+      "num_habitacion": 202,
+      "num_huespedes": 3,
+      "metodo_pago": "PayPal",
+      "estado": "Confirmada",
+      "notas": "Cuna para bebé"
+    },
+    {
+      "id": 3,
+      "cliente_id": 3,
+      "check_in": "2025-04-05",
+      "check_out": "2025-04-10",
+      "tipo_habitacion": "Estándar",
+      "num_habitacion": 303,
+      "num_huespedes": 1,
+      "metodo_pago": "Efectivo",
+      "estado": "Pendiente",
+      "notas": ""
+    },
+    {
+      "id": 4,
+      "cliente_id": 4,
+      "check_in": "2025-02-20",
+      "check_out": "2025-02-25",
+      "tipo_habitacion": "Suite",
+      "num_habitacion": 102,
+      "num_huespedes": 2,
+      "metodo_pago": "Tarjeta",
+      "estado": "Confirmada",
+      "notas": ""
+    },
+    {
+      "id": 5,
+      "cliente_id": 5,
+      "check_in": "2025-05-01",
+      "check_out": "2025-05-10",
+      "tipo_habitacion": "Doble",
+      "num_habitacion": 204,
+      "num_huespedes": 4,
+      "metodo_pago": "Tarjeta",
+      "estado": "Pendiente",
+      "notas": "Descuento aplicado"
+    },
+    {
+      "id": 6,
+      "cliente_id": 6,
+      "check_in": "2025-06-15",
+      "check_out": "2025-06-20",
+      "tipo_habitacion": "Suite",
+      "num_habitacion": 103,
+      "num_huespedes": 2,
+      "metodo_pago": "Efectivo",
+      "estado": "Confirmada",
+      "notas": ""
+    },
+    {
+      "id": 7,
+      "cliente_id": 7,
+      "check_in": "2025-07-01",
+      "check_out": "2025-07-05",
+      "tipo_habitacion": "Estándar",
+      "num_habitacion": 305,
+      "num_huespedes": 1,
+      "metodo_pago": "PayPal",
+      "estado": "Cancelada",
+      "notas": "Cambio de fechas"
+    },
+    {
+      "id": 8,
+      "cliente_id": 8,
+      "check_in": "2025-08-10",
+      "check_out": "2025-08-15",
+      "tipo_habitacion": "Suite",
+      "num_habitacion": 104,
+      "num_huespedes": 2,
+      "metodo_pago": "Tarjeta",
+      "estado": "Confirmada",
+      "notas": ""
+    },
+    {
+      "id": 9,
+      "cliente_id": 9,
+      "check_in": "2025-09-05",
+      "check_out": "2025-09-10",
+      "tipo_habitacion": "Doble",
+      "num_habitacion": 206,
+      "num_huespedes": 3,
+      "metodo_pago": "Efectivo",
+      "estado": "Pendiente",
+      "notas": ""
+    },
+    {
+      "id": 10,
+      "cliente_id": 10,
+      "check_in": "2025-10-15",
+      "check_out": "2025-10-20",
+      "tipo_habitacion": "Suite",
+      "num_habitacion": 105,
+      "num_huespedes": 2,
+      "metodo_pago": "Tarjeta",
+      "estado": "Confirmada",
+      "notas": "Aniversario"
+    }
+  ]
