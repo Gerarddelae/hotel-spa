@@ -14,7 +14,7 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 CORS(app, origins="http://127.0.0.1:3000", supports_credentials=True)
 JWTManager(app)
 
-DATA_DIR = "data"
+DATA_DIR = "backend/data"
 os.makedirs(DATA_DIR, exist_ok=True)
 
 def initialize_data_file(file_name):
@@ -51,6 +51,10 @@ def hash_passwords():
     write_data("users_hashed.json", hashed_users)
     print("✅ Se ha generado users_hashed.json con contraseñas hasheadas.")
 
+def remove_sensitive_fields(data, sensitive_fields=["password"]):
+    """ Elimina campos sensibles de una lista de diccionarios """
+    return [{k: v for k, v in item.items() if k not in sensitive_fields} for item in data]
+
 # 🔹 Generar el archivo con contraseñas hasheadas al iniciar
 hash_passwords()
 
@@ -78,7 +82,7 @@ def get_data(file_name):
     file_name = f"{file_name}.json"
     try:
         data = read_data(file_name)
-        return jsonify(data), 200
+        return jsonify(remove_sensitive_fields(data)), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

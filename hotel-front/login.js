@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("🔹 Token recibido:", data.token);
 
         // 🔹 Redirigir al index
-        window.location.href = "hotel-front/index.html";
+        window.location.href = "index.html";
       } else {
         errorMessage.textContent = data.error || "Error en la autenticación";
         errorMessage.classList.remove("d-none");

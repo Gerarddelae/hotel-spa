@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const token = localStorage.getItem("jwtToken");
 
     if (!token) {
-        window.location.href = "../login.html"; // Redirigir si no hay token
+        window.location.href = "index.html"; // Redirigir si no hay token
     }
     
     const userObserver = new MutationObserver((mutationsList, observer) => {
@@ -82,12 +82,12 @@ document.addEventListener("DOMContentLoaded", function () {
         outButton.addEventListener("click", function () {
             localStorage.removeItem("isLoggedIn"); // Eliminar sesión
             localStorage.removeItem("jwtToken"); // Elimina el token
-            window.location.href = "../login.html"; // Redirigir al login
+            window.location.href = "login.html"; // Redirigir al login
         });
             // Evitar que el usuario regrese con "Atrás"
         history.pushState(null, null, "login.html");
         window.addEventListener("popstate", function () {
-            history.pushState(null, null, "../login.html");
+            history.pushState(null, null, "login.html");
         });
     }
 
