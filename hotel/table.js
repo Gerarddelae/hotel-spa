@@ -68,9 +68,10 @@ function initializeTable(data, jsonBody) {
       sortable: true,
     })),
     onRefresh: function (params) {
-      const path = document.querySelector(".nav-link.search.active").getAttribute("path");
-      const head = document.querySelector(".nav-link.search.active").getAttribute("head");
-      const body = document.querySelector(".nav-link.search.active").getAttribute("body");
+      const activeButton = document.querySelector(".nav-link.search.active");
+      const path = activeButton.dataset.path;
+      const head = activeButton.dataset.head;
+      const body = activeButton.dataset.body;
       if (path && head && body) {
         loadTableData(path, head, body); // Recargar los datos cuando se presione el botón de actualizar
       }
