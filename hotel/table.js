@@ -4,9 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     tabs.forEach((button) => {
       if (!button.hasEventListener) {
         button.addEventListener("click", (event) => {
-          const path = event.target.getAttribute("path");
-          const head = event.target.getAttribute("head");
-          const body = event.target.getAttribute("body");
+          const { path, head, body } = event.target.dataset;
           if (path && head && body) {
             loadTableData(path, head, body);
           } else {
