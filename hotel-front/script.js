@@ -2,6 +2,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const sidebarContainer = document.getElementById("sidebar-container");
     const contentContainer = document.getElementById("content");
     const usuario = localStorage.getItem("usuario");
+    const token = localStorage.getItem("jwtToken");
+
+    if (!token) {
+        window.location.href = "../login.html"; // Redirigir si no hay token
+    }
     
     const userObserver = new MutationObserver((mutationsList, observer) => {
        const userContainer = document.getElementById("userContainer")
@@ -76,7 +81,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const outButton = document.getElementById("logout")
         outButton.addEventListener("click", function () {
             localStorage.removeItem("isLoggedIn"); // Eliminar sesión
+            localStorage.removeItem("jwtToken"); // Elimina el token
             window.location.href = "../login.html"; // Redirigir al login
+        });
+            // Evitar que el usuario regrese con "Atrás"
+        history.pushState(null, null, "login.html");
+        window.addEventListener("popstate", function () {
+            history.pushState(null, null, "../login.html");
         });
     }
 
