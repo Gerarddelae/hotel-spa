@@ -25,7 +25,12 @@ async function loadTableData(path, head, body) {
     const jsonHead = head;
     const jsonBody = body;
     console.log("Cargando JSON desde:", jsonUrl);
-    const response = await fetch(jsonUrl);
+    const response = await fetch(jsonUrl, {
+      method: "GET",
+      headers: {
+          "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`
+      }
+    });
     if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
     const data = await response.json();
     console.log("Datos JSON recibidos:", data.slice(0, 2));

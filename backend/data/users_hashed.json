@@ -1,0 +1,62 @@
+[
+    {
+        "id": 1,
+        "email": "admin@hotel.com",
+        "password": "scrypt:32768:8:1$1XTcRsDacro4QXid$e5f90e2369ac35494844901e971a96923338f6dfb8d04b88ba7702de055174f22041337874c871dbfd91e0907a36158b123a10fca9817904aa3a85775b3a96b9",
+        "role": "admin"
+    },
+    {
+        "id": 2,
+        "email": "juan.perez@hotel.com",
+        "password": "scrypt:32768:8:1$ZCahzQVojd80m5R7$7541eccf5cb9b7c45c99babf4363e11d17bac6c77c8dd34399c9bfae7382813a99e322a9b5b1236585dd4ef660af3062b1c442a786c53a8e3a321d3ed3caba11",
+        "role": "user"
+    },
+    {
+        "id": 3,
+        "email": "maria.gomez@hotel.com",
+        "password": "scrypt:32768:8:1$LDPQthQXUa8Ebei7$02fd936270a2dd6adb8e239eb7a500055a4d6fbb13226b37057ede0cd929623525aeb6a94e206af96aee998debda1192b1719fb097a67d1f15f0cb86b23142fc",
+        "role": "user"
+    },
+    {
+        "id": 4,
+        "email": "carlos.lopez@hotel.com",
+        "password": "scrypt:32768:8:1$l56yeazZ7dl9FBiE$c6b991830ec65d11141021beee85db3869b97d743881eda01b32d3bd3658777225e9b8d7fa73427c2f3a4bddaa4ea4bbb59974900b4afb7ade080f3aa0c0625c",
+        "role": "user"
+    },
+    {
+        "id": 5,
+        "email": "ana.martinez@hotel.com",
+        "password": "scrypt:32768:8:1$rS5DfFZbxChbo5Kh$5158d1c380a29ad40cc810776c9825549ed9621d20adb9b366b9280b4b6315c99b60e180218e172bb0e1390efbd7e22eaa8bc76c81a240e010bb76f9aceee82e",
+        "role": "user"
+    },
+    {
+        "id": 6,
+        "email": "pedro.fernandez@hotel.com",
+        "password": "scrypt:32768:8:1$g4DL5CxwQwRnK97S$4d871cde32679675bd52894df4c8fb50ddd66769c6f31f35842cd3f852bee007fafab7ab3b5dd01bd71b23ab60a11d9a2ba726a05f46d9dac9e47072f3544146",
+        "role": "user"
+    },
+    {
+        "id": 7,
+        "email": "sofia.torres@hotel.com",
+        "password": "scrypt:32768:8:1$UUuyaUnhMiXyjSOu$63eb6fa4872beca1e33ef1c18f34c81b81ff45be8d718da5d9361e065831ae79bd5b0e314e212faa5423dfce5241a1b6b80111d9f2b8d9c1f6cee4067f19faaf",
+        "role": "user"
+    },
+    {
+        "id": 8,
+        "email": "luis.rodriguez@hotel.com",
+        "password": "scrypt:32768:8:1$MXdVL2RB1T4XHEtS$678597f553f63f01e74c5cfd50323283fed291cb8a17af235adbe834ab7ff2c1ec27309b18ef66e6be89bc818cea142f57f4cd01b85854f5ab557158d36a4afb",
+        "role": "user"
+    },
+    {
+        "id": 9,
+        "email": "laura.sanchez@hotel.com",
+        "password": "scrypt:32768:8:1$cjNDZg2Fu8svWc9P$76c1aaf6d5aa6e1ba233ad1384bf51508800ba58c07277d6f0b5cc81670b050a7f350d128d56da9396c474259f0a9e2daa793baa7f88cf790bca990dc5045087",
+        "role": "user"
+    },
+    {
+        "id": 10,
+        "email": "diego.morales@hotel.com",
+        "password": "scrypt:32768:8:1$9ha4OdyRAhrJi4Mo$ff2797c3da03d0deadbd2146c8f34b189b7aebab1b83aae8bda280a816273f22aa4ada7650070bd3f5819404c90a863d60e84c5961f8762cc635505ca9ef16a2",
+        "role": "user"
+    }
+]

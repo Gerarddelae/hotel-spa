@@ -2,13 +2,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const loginForm = document.getElementById("loginForm");
 
   loginForm.addEventListener("submit", async function (event) {
-    event.preventDefault();
+    event.preventDefault(); // Evita el recargo de la página
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
     const errorMessage = document.getElementById("error-message");
-
-    errorMessage.classList.add("d-none");
 
     try {
       const response = await fetch("http://localhost:5000/api/auth/login", {
@@ -16,26 +14,33 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }), // ✅ Enviamos 'email', no 'username'
+        body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
-      }
-
       const data = await response.json();
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("usuario", email.split("@")[0]);
-      localStorage.setItem("isLoggedIn", "true");
-      window.location.href = "hotel-front/index.html"; // ✅ Redirigir tras login
+
+      if (response.ok && data.token) {
+        // 🔹 Guardar token en localStorage
+        localStorage.setItem("jwtToken", data.token);
+        localStorage.setItem("usuario", email.split("@")[0]);
+        localStorage.setItem("isLoggedIn", "true");
+
+        console.log("🔹 Token recibido:", data.token);
+
+        // 🔹 Redirigir al index
+        window.location.href = "hotel-front/index.html";
+      } else {
+        errorMessage.textContent = data.error || "Error en la autenticación";
+        errorMessage.classList.remove("d-none");
+      }
     } catch (error) {
       console.error("Error en la autenticación:", error);
-      errorMessage.textContent = error.message;
+      errorMessage.textContent = "Error de conexión con el servidor";
       errorMessage.classList.remove("d-none");
     }
   });
 
+  // 🔹 Mostrar/Ocultar contraseña
   document.getElementById("togglePassword").addEventListener("click", function () {
     const passwordField = document.getElementById("password");
     const type = passwordField.getAttribute("type") === "password" ? "text" : "password";
