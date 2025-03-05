@@ -1,60 +1,49 @@
 document.addEventListener("DOMContentLoaded", function () {
   const loginForm = document.getElementById("loginForm");
 
-  // Cargamos los usuarios del archivo JSON que los almacena
-  async function cargarUsuarios() {
-    try {
-      const response = await fetch("hotel-front/data/json/users.json"); // Asegúrate de que el archivo JSON está en la ruta correcta
-      const data = await response.json();
-      return parseJSON(data);
-    } catch (error) {
-      console.error("Error cargando el archivo JSON:", error);
-      return {};
-    }
-  }
-
-  // Formateamos los datos JSON para su manejo y uso en la lógica
-  function parseJSON(json) {
-    const usuarios = {};
-    json.forEach((usuario) => {
-      if (usuario.email && usuario.password) {
-        usuarios[usuario.email.trim()] = usuario.password.trim();
-      }
-    });
-    return usuarios;
-  }
-
   loginForm.addEventListener("submit", async function (event) {
-    event.preventDefault(); // Evita que la página se recargue
+    event.preventDefault();
 
-    const email = document.getElementById("email").value;
-    const usuario = email.replace(/@.*/, "");
-    const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
     const errorMessage = document.getElementById("error-message");
 
-    // Cargar usuarios desde JSON
-    const usuarios = await cargarUsuarios();
+    errorMessage.classList.add("d-none");
 
-    if (usuarios[email] && usuarios[email] === password) {
-      localStorage.setItem("usuario", usuario);
-      localStorage.setItem("isLoggedIn", "true"); // Guardar sesión
-      window.location.href = "hotel-front/index.html"; // Redirigir a la página del hotel
-    } else {
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }), // ✅ Enviamos 'email', no 'username'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("usuario", email.split("@")[0]);
+      localStorage.setItem("isLoggedIn", "true");
+      window.location.href = "hotel-front/index.html"; // ✅ Redirigir tras login
+    } catch (error) {
+      console.error("Error en la autenticación:", error);
+      errorMessage.textContent = error.message;
       errorMessage.classList.remove("d-none");
     }
   });
-  document
-    .getElementById("togglePassword")
-    .addEventListener("click", function () {
-      const passwordField = document.getElementById("password");
-      const type =
-        passwordField.getAttribute("type") === "password" ? "text" : "password";
-      passwordField.setAttribute("type", type);
 
-      // Cambiar el ícono del botón
-      this.innerHTML =
-        type === "password"
-          ? '<i class="bi bi-eye-fill"></i>'
-          : '<i class="bi bi-eye-slash-fill"></i>';
-    });
+  document.getElementById("togglePassword").addEventListener("click", function () {
+    const passwordField = document.getElementById("password");
+    const type = passwordField.getAttribute("type") === "password" ? "text" : "password";
+    passwordField.setAttribute("type", type);
+
+    this.innerHTML =
+      type === "password"
+        ? '<i class="bi bi-eye-fill"></i>'
+        : '<i class="bi bi-eye-slash-fill"></i>';
+  });
 });
