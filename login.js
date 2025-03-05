@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Cargamos los usuarios del archivo JSON que los almacena
   async function cargarUsuarios() {
     try {
-      const response = await fetch("hotel/data/json/users.json"); // Asegúrate de que el archivo JSON está en la ruta correcta
+      const response = await fetch("hotel-front/data/json/users.json"); // Asegúrate de que el archivo JSON está en la ruta correcta
       const data = await response.json();
       return parseJSON(data);
     } catch (error) {
@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (usuarios[email] && usuarios[email] === password) {
       localStorage.setItem("usuario", usuario);
       localStorage.setItem("isLoggedIn", "true"); // Guardar sesión
-      window.location.href = "hotel/index.html"; // Redirigir a la página del hotel
+      window.location.href = "hotel-front/index.html"; // Redirigir a la página del hotel
     } else {
       errorMessage.classList.remove("d-none");
     }
