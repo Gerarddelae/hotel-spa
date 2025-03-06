@@ -3,9 +3,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const contentContainer = document.getElementById("content");
     const usuario = localStorage.getItem("usuario");
     const token = localStorage.getItem("jwtToken");
+    let isLoggedIn = localStorage.getItem("userLoggedIn");
 
-    if (!token) {
-        window.location.href = "index.html"; // Redirigir si no hay token
+    if (!token && !isLoggedIn) {
+        window.location.href = "login.html"; // Redirige solo si no estamos ya en index.html
+        return; // Detiene la ejecución para evitar que siga cargando
     }
     
     const userObserver = new MutationObserver((mutationsList, observer) => {
@@ -84,12 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
             localStorage.removeItem("jwtToken"); // Elimina el token
             window.location.href = "login.html"; // Redirigir al login
         });
-            // Evitar que el usuario regrese con "Atrás"
-        history.pushState(null, null, "login.html");
-        window.addEventListener("popstate", function () {
-            history.pushState(null, null, "login.html");
-        });
-    }
+}
 
     // Manejar cambios en el historial (botones de atrás y adelante)
     window.addEventListener("popstate", function (event) {
