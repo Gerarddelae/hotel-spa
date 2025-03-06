@@ -1,62 +1,68 @@
 [
-  {
-      "id": 1,
-      "email": "admin@hotel.com",
-      "password": "123456",
-      "role": "admin"
-  },
-  {
-      "id": 2,
-      "email": "juan.perez@hotel.com",
-      "password": "juan123",
-      "role": "user"
-  },
-  {
-      "id": 3,
-      "email": "maria.gomez@hotel.com",
-      "password": "maria456",
-      "role": "user"
-  },
-  {
-      "id": 4,
-      "email": "carlos.lopez@hotel.com",
-      "password": "carlos789",
-      "role": "user"
-  },
-  {
-      "id": 5,
-      "email": "ana.martinez@hotel.com",
-      "password": "ana321",
-      "role": "user"
-  },
-  {
-      "id": 6,
-      "email": "pedro.fernandez@hotel.com",
-      "password": "pedro654",
-      "role": "user"
-  },
-  {
-      "id": 7,
-      "email": "sofia.torres@hotel.com",
-      "password": "sofia987",
-      "role": "user"
-  },
-  {
-      "id": 8,
-      "email": "luis.rodriguez@hotel.com",
-      "password": "luis111",
-      "role": "user"
-  },
-  {
-      "id": 9,
-      "email": "laura.sanchez@hotel.com",
-      "password": "laura222",
-      "role": "user"
-  },
-  {
-      "id": 10,
-      "email": "diego.morales@hotel.com",
-      "password": "diego333",
-      "role": "user"
-  }
+    {
+        "id": 1,
+        "email": "admin@hotel.com",
+        "password": "123456",
+        "role": "admin"
+    },
+    {
+        "id": 2,
+        "email": "juan.perez@hotel.com",
+        "password": "juan123",
+        "role": "user"
+    },
+    {
+        "id": 3,
+        "email": "maria.gomez@hotel.com",
+        "password": "maria456",
+        "role": "user"
+    },
+    {
+        "id": 4,
+        "email": "carlos.lopez@hotel.com",
+        "password": "carlos789",
+        "role": "user"
+    },
+    {
+        "id": 5,
+        "email": "ana.martinez@hotel.com",
+        "password": "ana321",
+        "role": "user"
+    },
+    {
+        "id": 6,
+        "email": "pedro.fernandez@hotel.com",
+        "password": "pedro654",
+        "role": "user"
+    },
+    {
+        "id": 7,
+        "email": "sofia.torres@hotel.com",
+        "password": "sofia987",
+        "role": "user"
+    },
+    {
+        "id": 8,
+        "email": "luis.rodriguez@hotel.com",
+        "password": "luis111",
+        "role": "user"
+    },
+    {
+        "id": 9,
+        "email": "laura.sanchez@hotel.com",
+        "password": "laura222",
+        "role": "user"
+    },
+    {
+        "id": 10,
+        "email": "diego.morales@hotel.com",
+        "password": "diego333",
+        "role": "user"
+    },
+    {
+        "id": 11,
+        "email": "nuevo.usuario@example.com",
+        "password": "contraseñaSegura",
+        "role": "user"
+    }
 ]

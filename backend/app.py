@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import (
+    JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
+)
 import os
 import json
 from datetime import timedelta
@@ -44,7 +46,7 @@ def hash_passwords():
 
     for user in users:
         hashed_user = user.copy()
-        if not hashed_user["password"].startswith("$pbkdf2-sha256$"):  # Evita re-hashear si ya está en hash
+        if not hashed_user["password"].startswith("$pbkdf2-sha256$"):
             hashed_user["password"] = generate_password_hash(user["password"])
         hashed_users.append(hashed_user)
 
@@ -60,7 +62,7 @@ hash_passwords()
 
 @app.route("/api/auth/login", methods=["POST"])
 def login():
-    """ Verifica credenciales y genera un JWT si son correctas. """
+    """ Verifica credenciales y genera un JWT con el rol del usuario si son correctas. """
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
@@ -68,12 +70,40 @@ def login():
     users_hashed = read_data("users_hashed.json")
     user = next((u for u in users_hashed if u["email"] == email), None)
 
-    if user:
-        if check_password_hash(user["password"], password):
-            access_token = create_access_token(identity=email)
-            return jsonify({"token": access_token}), 200
+    if user and check_password_hash(user["password"], password):
+        additional_claims = {"role": user.get("role", "user")}  # Agregar rol al token
+        access_token = create_access_token(identity=email, additional_claims=additional_claims)
+        return jsonify({"token": access_token, "role": user.get("role", "user")}), 200
 
     return jsonify({"error": "Credenciales incorrectas"}), 401
+
+def is_admin():
+    """ Verifica si el usuario autenticado es administrador """
+    claims = get_jwt()
+    return claims.get("role") == "admin"
+
+@app.route("/api/users", methods=["POST"])
+@jwt_required()
+def create_user():
+    """ Solo los administradores pueden agregar usuarios """
+    if not is_admin():
+        return jsonify({"error": "Acceso denegado"}), 403  # ⚠️ Denegar acceso si no es admin
+
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+    role = data.get("role", "user")  # Si no se envía rol, se asigna "user" por defecto
+
+    users = read_data("users.json")
+    if any(u["email"] == email for u in users):
+        return jsonify({"error": "El usuario ya existe"}), 400
+
+    new_user = {"email": email, "password": password, "role": role}
+    users.append(new_user)
+    write_data("users.json", users)
+
+    hash_passwords()  # Actualizar `users_hashed.json`
+    return jsonify({"message": "Usuario creado exitosamente"}), 201
 
 @app.route("/api/<file_name>", methods=["GET"])
 @jwt_required()
