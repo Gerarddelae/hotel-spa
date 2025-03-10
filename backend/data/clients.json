@@ -1,6 +1,5 @@
 [
   {
-    "id": 1,
     "nombre": "Juan Pérez",
     "email": "juanperez@email.com",
     "telefono": "+34600111222",
@@ -10,7 +9,6 @@
     "comentarios": ""
   },
   {
-    "id": 2,
     "nombre": "Maria Gonzalez",
     "email": "mariagonzalez@email.com",
     "telefono": "+34655443322",
@@ -20,7 +18,6 @@
     "comentarios": "Viaja con niños"
   },
   {
-    "id": 3,
     "nombre": "Carlos López",
     "email": "carloslopez@email.com",
     "telefono": "+33678965432",
@@ -30,7 +27,6 @@
     "comentarios": ""
   },
   {
-    "id": 4,
     "nombre": "Ana Torres",
     "email": "ana.torres@email.com",
     "telefono": "+442012345678",
@@ -40,7 +36,6 @@
     "comentarios": ""
   },
   {
-    "id": 5,
     "nombre": "Pedro Martinez",
     "email": "pedromartinez@email.com",
     "telefono": "+34677889900",
@@ -50,7 +45,6 @@
     "comentarios": ""
   },
   {
-    "id": 6,
     "nombre": "Laura Fernández",
     "email": "laura.fernandez@email.com",
     "telefono": "+498912345678",
@@ -60,7 +54,6 @@
     "comentarios": ""
   },
   {
-    "id": 7,
     "nombre": "Sofía Méndez",
     "email": "sofia.mendez@email.com",
     "telefono": "+34987654321",
@@ -70,7 +63,6 @@
     "comentarios": "Alérgica a frutos secos"
   },
   {
-    "id": 8,
     "nombre": "Ricardo Alvarez",
     "email": "ricardo.alvarez@email.com",
     "telefono": "+5511987654321",
@@ -80,7 +72,6 @@
     "comentarios": ""
   },
   {
-    "id": 9,
     "nombre": "Emily Johnson",
     "email": "emily.johnson@email.com",
     "telefono": "+11234567890",
@@ -90,7 +81,6 @@
     "comentarios": ""
   },
   {
-    "id": 10,
     "nombre": "Miguel Santos",
     "email": "miguel.santos@email.com",
     "telefono": "+521234567890",
@@ -100,7 +90,6 @@
     "comentarios": "Viajero frecuente"
   },
   {
-    "id": 11,
     "nombre": "Clara Ramírez",
     "email": "clara.ramirez@email.com",
     "telefono": "+34699123456",
@@ -110,7 +99,6 @@
     "comentarios": "Prefiere habitación silenciosa"
   },
   {
-    "id": 12,
     "nombre": "Pablo Gómez",
     "email": "pablo.gomez@email.com",
     "telefono": "+34912345678",
@@ -120,7 +108,6 @@
     "comentarios": "Viaja por trabajo"
   },
   {
-    "id": 13,
     "nombre": "Isabel Díaz",
     "email": "isabel.diaz@email.com",
     "telefono": "+34666555444",
@@ -130,7 +117,6 @@
     "comentarios": ""
   },
   {
-    "id": 14,
     "nombre": "Javier Morales",
     "email": "javier.morales@email.com",
     "telefono": "+34612398745",
@@ -140,7 +126,6 @@
     "comentarios": "Cliente habitual"
   },
   {
-    "id": 15,
     "nombre": "Lucía Vargas",
     "email": "lucia.vargas@email.com",
     "telefono": "+34789123456",
@@ -150,7 +135,6 @@
     "comentarios": "Solicita menú especial"
   },
   {
-    "id": 16,
     "nombre": "Andrés Castillo",
     "email": "andres.castillo@email.com",
     "telefono": "+34654321987",
@@ -160,7 +144,6 @@
     "comentarios": ""
   },
   {
-    "id": 17,
     "nombre": "Elena Ruiz",
     "email": "elena.ruiz@email.com",
     "telefono": "+34987612345",
@@ -170,7 +153,6 @@
     "comentarios": "Viaja con mascota"
   },
   {
-    "id": 18,
     "nombre": "Roberto Silva",
     "email": "roberto.silva@email.com",
     "telefono": "+34611223344",
@@ -180,7 +162,6 @@
     "comentarios": "Necesita asistencia"
   },
   {
-    "id": 19,
     "nombre": "Carmen Ortiz",
     "email": "carmen.ortiz@email.com",
     "telefono": "+34699887766",
@@ -190,7 +171,6 @@
     "comentarios": ""
   },
   {
-    "id": 20,
     "nombre": "Tomás Herrera",
     "email": "tomas.herrera@email.com",
     "telefono": "+34633445566",

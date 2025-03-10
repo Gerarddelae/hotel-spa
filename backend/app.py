@@ -1,169 +1,157 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_jwt_extended import (
-    JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
-)
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt
+from flask_sqlalchemy import SQLAlchemy
+from bcrypt import gensalt, hashpw, checkpw
+from datetime import timedelta, datetime
 import os
-import json
-from datetime import timedelta
-from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.json.sort_keys = False
-app.json.ensure_ascii = False
+app.json.sort_keys = False  # No ordena las claves alfabéticamente
+app.json.ensure_ascii = False  # Permite caracteres especiales en UTF-8
 app.config["JWT_SECRET_KEY"] = "supersecretkey"
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
-CORS(app, origins="http://127.0.0.1:3000", supports_credentials=True)
+
+# Crear la carpeta database si no existe
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DB_PATH = os.path.join(BASE_DIR, "database", "hotel.db")
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app)
 JWTManager(app)
+CORS(app, origins="http://127.0.0.1:3000", supports_credentials=True)
 
-DATA_DIR = "backend/data"
-os.makedirs(DATA_DIR, exist_ok=True)
+# Modelos
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(256), nullable=False)
+    role = db.Column(db.String(20), default="user", nullable=False)
 
-def initialize_data_file(file_name):
-    """ Verifica si el archivo existe, si no lo crea vacío. """
-    file_path = os.path.join(DATA_DIR, file_name)
-    if not os.path.exists(file_path):
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump([], f, ensure_ascii=False)
-    return file_path
+    def set_password(self, password):
+        self.password = hashpw(password.encode('utf-8'), gensalt()).decode('utf-8')
 
-def read_data(file_name):
-    """ Lee datos de un archivo JSON. """
-    file_path = initialize_data_file(file_name)
-    with open(file_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+class Client(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    telefono = db.Column(db.String(20), nullable=False)
+    documento = db.Column(db.String(20), unique=True, nullable=False)
+    fecha_nacimiento = db.Column(db.String(10), nullable=False)
+    preferencias = db.Column(db.String(255), nullable=True)
+    comentarios = db.Column(db.Text, nullable=True)
 
-def write_data(file_name, data):
-    """ Escribe datos en un archivo JSON. """
-    file_path = initialize_data_file(file_name)
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
+class Room(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    num_habitacion = db.Column(db.Integer, unique=True, nullable=False)
+    tipo = db.Column(db.String(50), nullable=False)
+    capacidad = db.Column(db.Integer, nullable=False)
+    precio_noche = db.Column(db.Float, nullable=False)
+    disponibilidad = db.Column(db.String(20), nullable=False)
+    amenidades = db.Column(db.Text, nullable=True)
+    vista = db.Column(db.String(50), nullable=True)
+    notas = db.Column(db.Text, nullable=True)
 
-def hash_passwords():
-    """ Convierte las contraseñas de users.json a formato hash y las guarda en users_hashed.json. """
-    users = read_data("users.json")
-    hashed_users = []
+class Booking(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    cliente_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    habitacion_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)  # Relación con Room por ID
+    check_in = db.Column(db.Date, nullable=False)
+    check_out = db.Column(db.Date, nullable=False)
+    tipo_habitacion = db.Column(db.String(50), nullable=False)
+    num_huespedes = db.Column(db.Integer, nullable=False)
+    metodo_pago = db.Column(db.String(50), nullable=False)
+    estado = db.Column(db.String(20), nullable=False)
+    notas = db.Column(db.Text, nullable=True)
+    valor_reservacion = db.Column(db.Float, nullable=False, default=0.0)  # Nuevo campo
 
-    for user in users:
-        hashed_user = user.copy()
-        if not hashed_user["password"].startswith("$pbkdf2-sha256$"):
-            hashed_user["password"] = generate_password_hash(user["password"])
-        hashed_users.append(hashed_user)
+    cliente = db.relationship("Client", backref="bookings")
+    habitacion = db.relationship("Room", backref="bookings")  # Relación con Room
 
-    write_data("users_hashed.json", hashed_users)
-    print("✅ Se ha generado users_hashed.json con contraseñas hasheadas.")
+# Inicializar la base de datos dentro del contexto
+def init_db():
+    with app.app_context():
+        db.create_all()
+        # Verificar si el usuario admin ya existe
+        if not User.query.filter_by(email="admin@hotel.com").first():
+            admin_user = User(email="admin@hotel.com", role="admin")
+            admin_user.set_password("123456")
+            db.session.add(admin_user)
+            db.session.commit()
+            print("✔ Usuario admin creado con éxito")
 
-def remove_sensitive_fields(data, sensitive_fields=["password"]):
-    """ Elimina campos sensibles de una lista de diccionarios """
-    return [{k: v for k, v in item.items() if k not in sensitive_fields} for item in data]
-
-# 🔹 Generar el archivo con contraseñas hasheadas al iniciar
-hash_passwords()
-
-@app.route("/api/auth/login", methods=["POST"])
-def login():
-    """ Verifica credenciales y genera un JWT con el rol del usuario si son correctas. """
-    data = request.get_json()
-    email = data.get("email")
-    password = data.get("password")
-
-    users_hashed = read_data("users_hashed.json")
-    user = next((u for u in users_hashed if u["email"] == email), None)
-
-    if user and check_password_hash(user["password"], password):
-        additional_claims = {"role": user.get("role", "user")}  # Agregar rol al token
-        access_token = create_access_token(identity=email, additional_claims=additional_claims)
-        return jsonify({"token": access_token, "role": user.get("role", "user")}), 200
-
-    return jsonify({"error": "Credenciales incorrectas"}), 401
-
+# Endpoints
 def is_admin():
-    """ Verifica si el usuario autenticado es administrador """
     claims = get_jwt()
     return claims.get("role") == "admin"
 
-@app.route("/api/users", methods=["POST"])
+@app.route("/api/auth/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    user = User.query.filter_by(email=data["email"]).first()
+    if user and checkpw(data["password"].encode('utf-8'), user.password.encode('utf-8')):
+        access_token = create_access_token(identity=user.email, additional_claims={"role": user.role})
+        return jsonify({"token": access_token, "role": user.role}), 200
+    return jsonify({"error": "Credenciales incorrectas"}), 401
+
+# CRUD para Clientes, Habitaciones y Reservas
+@app.route("/api/<string:model>", methods=["GET", "POST", "PUT", "DELETE"])
 @jwt_required()
-def create_user():
-    """ Solo los administradores pueden agregar usuarios """
-    if not is_admin():
-        return jsonify({"error": "Acceso denegado"}), 403  # ⚠️ Denegar acceso si no es admin
+def handle_crud(model):
+    models = {"users": User, "clients": Client, "rooms": Room, "bookings": Booking}
+    if model not in models:
+        return jsonify({"error": "Modelo no válido"}), 400
+    Model = models[model]
+
+    if request.method == "GET":
+        items = Model.query.order_by(Model.id).all()  # Ordenar por ID
+        return jsonify([
+            {column.name: getattr(item, column.name) for column in item.__table__.columns}
+            for item in items])
 
     data = request.get_json()
-    email = data.get("email")
-    password = data.get("password")
-    role = data.get("role", "user")  # Si no se envía rol, se asigna "user" por defecto
 
-    users = read_data("users.json")
-    if any(u["email"] == email for u in users):
-        return jsonify({"error": "El usuario ya existe"}), 400
+    if request.method == "POST":
+        try:
+            if model == "bookings":
+                # Convertir fechas de string a objeto date
+                data["check_in"] = datetime.strptime(data["check_in"], "%Y-%m-%d").date()
+                data["check_out"] = datetime.strptime(data["check_out"], "%Y-%m-%d").date()
+            
+            if model == "users":
+                new_item = User(email=data["email"], role=data.get("role", "user"))
+                new_item.set_password(data["password"])
+            else:
+                new_item = Model(**data)
 
-    new_user = {"email": email, "password": password, "role": role}
-    users.append(new_user)
-    write_data("users.json", users)
-
-    hash_passwords()  # Actualizar `users_hashed.json`
-    return jsonify({"message": "Usuario creado exitosamente"}), 201
-
-@app.route("/api/<file_name>", methods=["GET"])
-@jwt_required()
-def get_data(file_name):
-    """ Obtiene datos de un archivo JSON. """
-    file_name = f"{file_name}.json"
-    try:
-        data = read_data(file_name)
-        return jsonify(remove_sensitive_fields(data)), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/<file_name>", methods=["POST"])
-@jwt_required()
-def add_data(file_name):
-    """ Agrega un nuevo dato a un archivo JSON. """
-    file_name = f"{file_name}.json"
-    new_entry = request.get_json()
-
-    if not new_entry:
-        return jsonify({"error": "No se enviaron datos"}), 400
-
-    data = read_data(file_name)
-    data.append(new_entry)
-    write_data(file_name, data)
-
-    return jsonify({"message": "Dato agregado correctamente"}), 201
-
-@app.route("/api/<file_name>/<int:item_id>", methods=["PUT"])
-@jwt_required()
-def update_data(file_name, item_id):
-    """ Actualiza un dato en un archivo JSON. """
-    file_name = f"{file_name}.json"
-    updated_entry = request.get_json()
-
-    if not updated_entry:
-        return jsonify({"error": "No se enviaron datos"}), 400
-
-    data = read_data(file_name)
-    for index, item in enumerate(data):
-        if item.get("id") == item_id:
-            data[index] = {**item, **updated_entry}
-            write_data(file_name, data)
-            return jsonify({"message": "Dato actualizado correctamente"}), 200
-
-    return jsonify({"error": "ID no encontrado"}), 404
-
-@app.route("/api/<file_name>/<int:item_id>", methods=["DELETE"])
-@jwt_required()
-def delete_data(file_name, item_id):
-    """ Elimina un dato de un archivo JSON. """
-    file_name = f"{file_name}.json"
-    data = read_data(file_name)
-    filtered_data = [item for item in data if item.get("id") != item_id]
-
-    if len(filtered_data) == len(data):
-        return jsonify({"error": "ID no encontrado"}), 404
-
-    write_data(file_name, filtered_data)
-    return jsonify({"message": "Dato eliminado correctamente"}), 200
+            db.session.add(new_item)
+            db.session.commit()
+            return jsonify({"message": "Registro creado exitosamente"}), 201
+        except ValueError:
+            return jsonify({"error": "Formato de fecha inválido, usa YYYY-MM-DD"}), 400
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    elif request.method == "PUT":
+        item = Model.query.get(data["id"])
+        if item:
+            for key, value in data.items():
+                if key == "password" and model == "users":
+                    item.set_password(value)
+                else:
+                    setattr(item, key, value)
+            db.session.commit()
+            return jsonify({"message": "Registro actualizado"})
+        return jsonify({"error": "Registro no encontrado"}), 404
+    elif request.method == "DELETE":
+        item = Model.query.get(data["id"])
+        if item:
+            db.session.delete(item)
+            db.session.commit()
+            return jsonify({"message": "Registro eliminado"})
+        return jsonify({"error": "Registro no encontrado"}), 404
 
 if __name__ == "__main__":
+    init_db()
     app.run(debug=True, port=5000)
