@@ -1,9 +1,19 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
     const sidebarContainer = document.getElementById("sidebar-container");
     const contentContainer = document.getElementById("content");
     const usuario = localStorage.getItem("usuario");
     const token = localStorage.getItem("jwtToken");
     let isLoggedIn = localStorage.getItem("userLoggedIn");
+
+    const roleRequest = await fetch("http://127.0.0.1:5000/api/me", {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    })
+
+    const apiRole = await roleRequest.json()
+    localStorage.setItem("role", apiRole.role)
 
     if (!token && !isLoggedIn) {
         window.location.href = "login.html"; // Redirige solo si no estamos ya en index.html

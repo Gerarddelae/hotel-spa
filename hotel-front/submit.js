@@ -7,17 +7,9 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!form || !adminContent || !userContent) {
             return; // Evita errores si los elementos aún no están en el DOM
         }
-        
-        const token = localStorage.getItem("jwtToken");
-        // peticion a la api para verificar los permisos del usuario logueado
-        const roleRequest = await fetch("http://127.0.0.1:5000/api/me", {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
-        })
-        const apiRole = await roleRequest.json()
-        const role = apiRole.role
+
+        const role = localStorage.getItem("role")
+
         // comprueba si el usuario es administrador con el servidor
         if (role === 'admin') {
             adminContent.style.display = 'block'
@@ -29,6 +21,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 form.addEventListener('submit', async function(event) {
                     event.preventDefault();
+                    console.log("Se evitó la recarga de la página");
                     const nombre = document.getElementById('nombreUser').value;
                     const email = document.getElementById('emailUser').value;
                     const password = document.getElementById('passwordForm').value;
@@ -67,6 +60,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
                         if (response.ok) {
                             form.reset();
+                               // Mostrar el toast
+                               mostrarToast("Usuario registrado con éxito.");
                         } else {
                             alert('Error en el registro: ' + result.message);
                         }
@@ -82,6 +77,17 @@ document.addEventListener("DOMContentLoaded", function() {
     const registroFormObserver = new MutationObserver((mutationsList) => {
         attachFormListener();
     });
+
+    // Función para mostrar el Toast con un mensaje dinámico
+    function mostrarToast(mensaje) {
+        const toastEl = document.getElementById("registroToast");
+        const toastBody = toastEl.querySelector(".toast-body");
+        toastBody.textContent = mensaje; // Cambia el mensaje del toast
+
+        const toast = new bootstrap.Toast(toastEl, { delay: 5000 }); // Desaparece en 5s
+        toast.show();
+}
+
 
     registroFormObserver.observe(document.body, { childList: true, subtree: true });
     attachFormListener(); // Llamada inicial
