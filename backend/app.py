@@ -185,12 +185,19 @@ def handle_crud(model):
             db.session.commit()
             return jsonify({"message": "Registro actualizado"})
         return jsonify({"error": "Registro no encontrado"}), 404
+    
     elif request.method == "DELETE":
+        claims = get_jwt()  # Obtener los claims del token JWT
+
+        # Si se intenta eliminar un usuario, verificar que el rol sea admin
+        if model == "users" and claims.get("role") != "admin":
+            return jsonify({"error": "Acceso denegado. Solo los administradores pueden eliminar usuarios."}), 403
+
         item = Model.query.get(data["id"])
         if item:
             db.session.delete(item)
             db.session.commit()
-            return jsonify({"message": "Registro eliminado"})
+            return jsonify({"message": "Registro eliminado"})       
         return jsonify({"error": "Registro no encontrado"}), 404
 
 if __name__ == "__main__":
