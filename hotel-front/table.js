@@ -202,6 +202,13 @@ async function editRow(button) {
 }
 
 
+function mostrarToastEliminado() {
+  const toastEl = document.getElementById("deleteToast");
+  if (!toastEl) return;
+  const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+  toast.show();
+}
+
 
 
 async function deleteRow(button) {
@@ -239,23 +246,23 @@ async function deleteRow(button) {
 
     alert(`Registro con ID ${id} eliminado exitosamente.`);
     console.log(`Registro con ID ${id} eliminado en ${jsonUrl}`);
-
     // Intentar encontrar la tabla correcta
     const table = button.closest("table");
     if (!table) {
       console.error("No se encontró la tabla para actualizar.");
       return;
     }
-
+    
     // Obtener el ID de la tabla BootstrapTable
     const tableId = table.getAttribute("id");
     if (!tableId) {
       console.error("No se encontró el ID de la tabla.");
       return;
     }
-
+    
     // Asegurar que el campo de eliminación coincide con el que usa bootstrapTable
     $("#" + tableId).bootstrapTable("remove", { field: "id", values: [parseInt(id)] });
+    mostrarToastEliminado();
 
   } catch (error) {
     console.error("Error eliminando el registro:", error);

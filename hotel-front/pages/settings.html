@@ -95,18 +95,33 @@
       </table>
     </div>    
     </div>
+    <!-- Toasts de notificaciones -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
       <div id="registroToast" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header">
-          <strong class="me-auto">✅ Registro</strong>
-          <small class="text-muted">Justo ahora</small>
-          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body">
-          Usuario registrado con éxito.
-        </div>
+          <div class="toast-header">
+              <strong class="me-auto">✅ Registro</strong>
+              <small class="text-muted">Justo ahora</small>
+              <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+          <div class="toast-body">
+              Usuario registrado con éxito.
+          </div>
       </div>
-    </div>    
+  </div>
+
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div id="deleteToast" class="toast text-white bg-danger" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="toast-header">
+              <strong class="me-auto">❌ Eliminación</strong>
+              <small class="text-muted">Justo ahora</small>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+          <div class="toast-body">
+              Registro eliminado con éxito.
+          </div>
+      </div>
+  </div>
+   
   </div>
 <!-- Modal de Edición de Usuario -->
 <div class="modal fade" id="userEditModal" tabindex="-1" aria-labelledby="userEditModalLabel" aria-hidden="true">

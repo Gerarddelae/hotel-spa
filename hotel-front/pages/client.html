@@ -84,72 +84,16 @@
     </div>
   </div>
 </div>
-<!-- Modal para editar/eliminar información -->
-<div
-  class="modal fade"
-  id="infoModal"
-  tabindex="-1"
-  data-bs-backdrop="static"
-  aria-labelledby="modalLabel"
-  aria-hidden="true"
->
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalLabel">Detalles del Registro</h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Cerrar"
-        ></button>
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="deleteToast" class="toast text-white bg-danger" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+          <strong class="me-auto">❌ Eliminación</strong>
+          <small class="text-muted">Justo ahora</small>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
-        <input type="hidden" id="editIndex" />
-        <div class="mb-3">
-          <label class="form-label">Nombre:</label>
-          <input type="text" class="form-control" id="editNombre" readonly />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Edad:</label>
-          <input type="number" class="form-control" id="editEdad" readonly />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">País:</label>
-          <input type="text" class="form-control" id="editPais" readonly />
-        </div>
+      <div class="toast-body">
+          Registro eliminado con éxito.
       </div>
-      <div class="modal-footer">
-        <button
-          id="btnEditar"
-          type="button"
-          class="btn btn-warning"
-          onclick="habilitarEdicion()"
-        >
-          Editar
-        </button>
-        <button
-          id="btnGuardar"
-          type="button"
-          class="btn btn-primary"
-          onclick="guardarEdicion()"
-          style="display: none"
-        >
-          Guardar Cambios
-        </button>
-        <button
-          id="btnEliminar"
-          type="button"
-          class="btn btn-danger"
-          onclick="eliminarRegistro()"
-        >
-          Eliminar
-        </button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Cerrar
-        </button>
-      </div>
-    </div>
   </div>
 </div>
 

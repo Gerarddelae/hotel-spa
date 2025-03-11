@@ -175,16 +175,24 @@ def handle_crud(model):
             return jsonify({"error": str(e)}), 500
 
     elif request.method == "PUT":
+        claims = get_jwt()  # Obtener los claims del token JWT
+
+        # Si se intenta modificar un usuario, verificar que el rol sea admin
+        if model == "users" and claims.get("role") != "admin":
+            return jsonify({"error": "Acceso denegado. Solo los administradores pueden modificar usuarios."}), 403
+
         item = Model.query.get(data["id"])
         if item:
             for key, value in data.items():
                 if key == "password" and model == "users":
-                    item.set_password(value)
+                    item.set_password(value)  # Asegurar el uso de hash para la contraseña
                 else:
                     setattr(item, key, value)
             db.session.commit()
             return jsonify({"message": "Registro actualizado"})
+
         return jsonify({"error": "Registro no encontrado"}), 404
+
     
     elif request.method == "DELETE":
         claims = get_jwt()  # Obtener los claims del token JWT
