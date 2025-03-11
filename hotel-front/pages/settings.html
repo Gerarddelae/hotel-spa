@@ -41,7 +41,7 @@
     >
         <div class="container mt-4 ml-1">
           <div class="row">
-              <div class="col-md-6">
+              <div class="col-md-6" id="adminContent" style="display: none;">
                   <div class="card">
                       <div class="card-header text-center">Registro de Usuario</div>
                       <div class="card-body">
@@ -69,6 +69,9 @@
               </div>
           </div>
       </div>
+      <div class="alert alert-danger text-center" id="userContent" style="display: block;">
+        Solo el administrador puede registrar nuevos usuarios.
+    </div>
     </div>
     <div
       class="tab-pane fade"

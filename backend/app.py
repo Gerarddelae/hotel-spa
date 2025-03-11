@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt, get_jwt_identity
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from bcrypt import gensalt, hashpw, checkpw
@@ -107,6 +107,22 @@ def login():
         return jsonify({"token": access_token, "role": user.role, "name": user.nombre}), 200
     return jsonify({"error": "Credenciales incorrectas"}), 401
 
+@app.route("/api/me", methods=["GET"])
+@jwt_required()
+def get_current_user():
+    current_user_email = get_jwt_identity()  # Obtener el email del usuario autenticado
+    claims = get_jwt()  # Obtener los claims del token
+
+    user = User.query.filter_by(email=current_user_email).first()
+    if not user:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+
+    return jsonify({
+        "email": user.email,
+        "role": claims.get("role", "user"),
+        "name": user.nombre
+    }), 200
+
 # CRUD para Clientes, Habitaciones y Reservas
 @app.route("/api/<string:model>", methods=["GET", "POST", "PUT", "DELETE"])
 @jwt_required()
@@ -126,12 +142,12 @@ def handle_crud(model):
 
     if request.method == "POST":
         try:
-            if model == "bookings":
-                # Convertir fechas de string a objeto date
-                data["check_in"] = datetime.strptime(data["check_in"], "%Y-%m-%d").date()
-                data["check_out"] = datetime.strptime(data["check_out"], "%Y-%m-%d").date()
-            
             if model == "users":
+                # Obtener el rol del usuario autenticado
+                claims = get_jwt()
+                if claims.get("role") != "admin":
+                    return jsonify({"error": "Acceso denegado. Solo los administradores pueden registrar usuarios."}), 403
+
                 # Crear nuevo usuario con nombre
                 new_item = User(
                     nombre=data["nombre"],  # Incluir nombre
@@ -139,6 +155,13 @@ def handle_crud(model):
                     role=data.get("role", "user")
                 )
                 new_item.set_password(data["password"])
+
+            elif model == "bookings":
+                # Convertir fechas de string a objeto date
+                data["check_in"] = datetime.strptime(data["check_in"], "%Y-%m-%d").date()
+                data["check_out"] = datetime.strptime(data["check_out"], "%Y-%m-%d").date()
+                new_item = Booking(**data)
+
             else:
                 new_item = Model(**data)
 
@@ -150,6 +173,7 @@ def handle_crud(model):
             return jsonify({"error": "Formato de fecha inválido, usa YYYY-MM-DD"}), 400
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
     elif request.method == "PUT":
         item = Model.query.get(data["id"])
         if item:

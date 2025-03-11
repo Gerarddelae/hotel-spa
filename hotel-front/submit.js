@@ -1,6 +1,28 @@
 document.addEventListener("DOMContentLoaded", function() {
-    function attachFormListener() {
+    async function attachFormListener() {
         const form = document.getElementById('usuarioForm');
+        const adminContent = document.getElementById('adminContent')
+        const userContent = document.getElementById('userContent')
+
+        if (!form || !adminContent || !userContent) {
+            return; // Evita errores si los elementos aún no están en el DOM
+        }
+        
+        const token = localStorage.getItem("jwtToken");
+        // peticion a la api para verificar los permisos del usuario logueado
+        const roleRequest = await fetch("http://127.0.0.1:5000/api/me", {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        const apiRole = await roleRequest.json()
+        const role = apiRole.role
+        // comprueba si el usuario es administrador con el servidor
+        if (role === 'admin') {
+            adminContent.style.display = 'block'
+            userContent.style.display = 'none'
+        } 
         if (form) {
             if (!form.dataset.listenerAdded) {
                 form.dataset.listenerAdded = true;
