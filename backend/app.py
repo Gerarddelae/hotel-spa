@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from bcrypt import gensalt, hashpw, checkpw
 from datetime import timedelta, datetime
 import os
@@ -10,7 +11,7 @@ app = Flask(__name__)
 app.json.sort_keys = False  # No ordena las claves alfabéticamente
 app.json.ensure_ascii = False  # Permite caracteres especiales en UTF-8
 app.config["JWT_SECRET_KEY"] = "supersecretkey"
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=9)
 
 # Crear la carpeta database si no existe
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -20,12 +21,14 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+Migrate(app, db)
 JWTManager(app)
 CORS(app, origins="http://127.0.0.1:3000", supports_credentials=True)
 
 # Modelos
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, default="Usuario")
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), default="user", nullable=False)
@@ -76,7 +79,11 @@ def init_db():
         db.create_all()
         # Verificar si el usuario admin ya existe
         if not User.query.filter_by(email="admin@hotel.com").first():
-            admin_user = User(email="admin@hotel.com", role="admin")
+            admin_user = User(
+                nombre="Admin",  # Nuevo campo
+                email="admin@hotel.com",
+                role="admin"
+            )
             admin_user.set_password("123456")
             db.session.add(admin_user)
             db.session.commit()
@@ -87,13 +94,17 @@ def is_admin():
     claims = get_jwt()
     return claims.get("role") == "admin"
 
+def remove_sensitive_fields(data, sensitive_fields=["password"]):
+    """ Elimina campos sensibles de una lista de diccionarios """
+    return [{k: v for k, v in item.items() if k not in sensitive_fields} for item in data]
+
 @app.route("/api/auth/login", methods=["POST"])
 def login():
     data = request.get_json()
     user = User.query.filter_by(email=data["email"]).first()
     if user and checkpw(data["password"].encode('utf-8'), user.password.encode('utf-8')):
         access_token = create_access_token(identity=user.email, additional_claims={"role": user.role})
-        return jsonify({"token": access_token, "role": user.role}), 200
+        return jsonify({"token": access_token, "role": user.role, "name": user.nombre}), 200
     return jsonify({"error": "Credenciales incorrectas"}), 401
 
 # CRUD para Clientes, Habitaciones y Reservas
@@ -107,9 +118,9 @@ def handle_crud(model):
 
     if request.method == "GET":
         items = Model.query.order_by(Model.id).all()  # Ordenar por ID
-        return jsonify([
+        return jsonify(remove_sensitive_fields([
             {column.name: getattr(item, column.name) for column in item.__table__.columns}
-            for item in items])
+            for item in items]))
 
     data = request.get_json()
 
@@ -121,7 +132,12 @@ def handle_crud(model):
                 data["check_out"] = datetime.strptime(data["check_out"], "%Y-%m-%d").date()
             
             if model == "users":
-                new_item = User(email=data["email"], role=data.get("role", "user"))
+                # Crear nuevo usuario con nombre
+                new_item = User(
+                    nombre=data["nombre"],  # Incluir nombre
+                    email=data["email"],
+                    role=data.get("role", "user")
+                )
                 new_item.set_password(data["password"])
             else:
                 new_item = Model(**data)
@@ -129,6 +145,7 @@ def handle_crud(model):
             db.session.add(new_item)
             db.session.commit()
             return jsonify({"message": "Registro creado exitosamente"}), 201
+
         except ValueError:
             return jsonify({"error": "Formato de fecha inválido, usa YYYY-MM-DD"}), 400
         except Exception as e:

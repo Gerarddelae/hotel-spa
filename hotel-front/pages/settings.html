@@ -39,7 +39,36 @@
       aria-labelledby="add-user-tab"
       tabindex="0"
     >
-      Aqui se registraran nuevos usuarios
+        <div class="container mt-4 ml-1">
+          <div class="row">
+              <div class="col-md-6">
+                  <div class="card">
+                      <div class="card-header text-center">Registro de Usuario</div>
+                      <div class="card-body">
+                          <form id="usuarioForm">
+                              <div class="mb-3">
+                                  <label for="nombre" class="form-label">Nombre</label>
+                                  <input type="text" class="form-control" id="nombreUser" required>
+                              </div>
+                              <div class="mb-3">
+                                  <label for="email" class="form-label">Correo Electrónico</label>
+                                  <input type="email" class="form-control" id="emailUser" required>
+                              </div>
+                              <div class="mb-3">
+                                  <label for="password" class="form-label">Contraseña</label>
+                                  <input type="password" class="form-control" id="passwordForm" required>
+                              </div>
+                              <div class="mb-3">
+                                  <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
+                                  <input type="password" class="form-control" id="confirmPasswordForm" required>
+                              </div>
+                              <button type="submit" class="btn btn-primary w-100">Registrar</button>
+                          </form>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
     </div>
     <div
       class="tab-pane fade"

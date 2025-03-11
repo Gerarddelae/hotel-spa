@@ -22,7 +22,8 @@ document.addEventListener("DOMContentLoaded", function () {
       if (response.ok && data.token) {
         // 🔹 Guardar token en localStorage
         localStorage.setItem("jwtToken", data.token);
-        localStorage.setItem("usuario", email.split("@")[0]);
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("usuario", data.name);
         localStorage.setItem("isLoggedIn", "true");
 
         console.log("🔹 Token recibido:", data.token);

@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
     const userObserver = new MutationObserver((mutationsList, observer) => {
        const userContainer = document.getElementById("userContainer")
-
+       
        if (userContainer) {
         observer.disconnect()
         userContainer.innerHTML = usuario
