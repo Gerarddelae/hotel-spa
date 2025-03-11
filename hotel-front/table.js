@@ -54,24 +54,36 @@ function generateTableHeaders(headers, head) {
     tr = document.createElement("tr");
     tableHead.appendChild(tr);
   }
+  
   tr.innerHTML = headers
     .map((header) => `<th data-field="${header}">${header}</th>`)
     .join("");
+  
+  tr.innerHTML += '<th data-field="actions">Acciones</th>'; // Agregar columna de acciones
+  
   console.log("Encabezados generados:", headers);
-
   applyTableHeaderTheme(head);
 }
 
 function initializeTable(data, jsonBody) {
   console.log("#" + jsonBody);
   $("#" + jsonBody).bootstrapTable("destroy");
+  
+  const columns = Object.keys(data[0]).map((key) => ({
+    field: key,
+    title: key,
+    sortable: true,
+  }));
+  
+  columns.push({
+    field: "actions",
+    title: "Acciones",
+    formatter: actionFormatter,
+  });
+  
   $("#" + jsonBody).bootstrapTable({
     data: data,
-    columns: Object.keys(data[0]).map((key) => ({
-      field: key,
-      title: key,
-      sortable: true,
-    })),
+    columns: columns,
     onRefresh: function (params) {
       const activeButton = document.querySelector(".nav-link.search.active");
       const path = activeButton.dataset.path;
@@ -82,8 +94,31 @@ function initializeTable(data, jsonBody) {
       }
     }
   });
-
+  
   console.log("Tabla inicializada con éxito");
+}
+
+function actionFormatter(value, row, index) {
+  return `
+    <button class="btn btn-warning btn-sm" data-index="${index}" onclick="editRow(this)">Editar</button>
+    <button class="btn btn-danger btn-sm" data-index="${index}" onclick="deleteRow(this)">Eliminar</button>
+  `;
+}
+
+function editRow(button) {
+  const index = button.getAttribute("data-index");
+  const table = button.closest("table").id;
+  const rowData = $("#" + table).bootstrapTable("getData")[index];
+  console.log(`Editar registro en fila ${index}:\n${JSON.stringify(rowData, null, 2)}`);
+  // Aquí puedes agregar la lógica para editar el registro seleccionado
+}
+
+function deleteRow(button) {
+  const index = button.getAttribute("data-index");
+  const table = button.closest("table").id;
+  const rowData = $("#" + table).bootstrapTable("getData")[index];
+  console.log(`Eliminar registro en fila ${index}:\n${JSON.stringify(rowData, null, 2)}`);
+  // Aquí puedes agregar la lógica para eliminar el registro seleccionado
 }
 
 function applyTableHeaderTheme(head) {
