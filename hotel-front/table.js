@@ -38,7 +38,7 @@ async function loadTableData(path, head, body) {
     if (!data.length) throw new Error("El JSON está vacío o mal formateado");
 
     generateTableHeaders(Object.keys(data[0]), jsonHead);
-    initializeTable(data, jsonBody);
+    initializeTable(data, jsonBody, jsonUrl);
     applyTableHeaderTheme(head);
   } catch (error) {
     console.error("Error:", error);
@@ -65,7 +65,7 @@ function generateTableHeaders(headers, head) {
   applyTableHeaderTheme(head);
 }
 
-function initializeTable(data, jsonBody) {
+function initializeTable(data, jsonBody, jsonUrl) {
   console.log("#" + jsonBody);
   $("#" + jsonBody).bootstrapTable("destroy");
   
@@ -78,7 +78,7 @@ function initializeTable(data, jsonBody) {
   columns.push({
     field: "actions",
     title: "Acciones",
-    formatter: actionFormatter,
+    formatter: (value, row, index) => actionFormatter(value, row, index, jsonUrl),
   });
   
   $("#" + jsonBody).bootstrapTable({
@@ -98,27 +98,77 @@ function initializeTable(data, jsonBody) {
   console.log("Tabla inicializada con éxito");
 }
 
-function actionFormatter(value, row, index) {
+function actionFormatter(value, row, index, jsonUrl) {
   return `
-    <button class="btn btn-warning btn-sm" data-index="${index}" onclick="editRow(this)">Editar</button>
-    <button class="btn btn-danger btn-sm" data-index="${index}" onclick="deleteRow(this)">Eliminar</button>
+    <button class="btn btn-warning btn-sm" data-index="${index}" data-id="${row.id}" data-path="${jsonUrl}" onclick="editRow(this)">Editar</button>
+    <button class="btn btn-danger btn-sm" data-index="${index}" data-id="${row.id}" data-path="${jsonUrl}" onclick="deleteRow(this)">Eliminar</button>
   `;
 }
 
 function editRow(button) {
-  const index = button.getAttribute("data-index");
-  const table = button.closest("table").id;
-  const rowData = $("#" + table).bootstrapTable("getData")[index];
-  console.log(`Editar registro en fila ${index}:\n${JSON.stringify(rowData, null, 2)}`);
+  const id = button.getAttribute("data-id");
+  const jsonUrl = button.getAttribute("data-path");
+  console.log(`Editar registro con ID ${id} en ${jsonUrl}`);
   // Aquí puedes agregar la lógica para editar el registro seleccionado
 }
 
-function deleteRow(button) {
-  const index = button.getAttribute("data-index");
-  const table = button.closest("table").id;
-  const rowData = $("#" + table).bootstrapTable("getData")[index];
-  console.log(`Eliminar registro en fila ${index}:\n${JSON.stringify(rowData, null, 2)}`);
-  // Aquí puedes agregar la lógica para eliminar el registro seleccionado
+async function deleteRow(button) {
+  const id = button.getAttribute("data-id");
+  const jsonUrl = button.getAttribute("data-path");
+
+  if (!id || !jsonUrl) {
+    console.error("Faltan datos para eliminar el registro.");
+    return;
+  }
+
+  const token = localStorage.getItem("jwtToken");
+  if (!token) {
+    alert("No estás autenticado. Inicia sesión.");
+    return;
+  }
+
+  if (!confirm(`¿Estás seguro de que deseas eliminar el registro con ID ${id}?`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(jsonUrl, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ id }) // Enviar el ID en el cuerpo de la petición
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error al eliminar: ${response.statusText}`);
+    }
+
+    alert(`Registro con ID ${id} eliminado exitosamente.`);
+    console.log(`Registro con ID ${id} eliminado en ${jsonUrl}`);
+
+    // Intentar encontrar la tabla correcta
+    const table = button.closest("table");
+    if (!table) {
+      console.error("No se encontró la tabla para actualizar.");
+      return;
+    }
+
+    // Obtener el ID de la tabla BootstrapTable
+    const tableId = table.getAttribute("id");
+    if (!tableId) {
+      console.error("No se encontró el ID de la tabla.");
+      return;
+    }
+
+    // Asegurar que el campo de eliminación coincide con el que usa bootstrapTable
+    $("#" + tableId).bootstrapTable("remove", { field: "id", values: [parseInt(id)] });
+
+  } catch (error) {
+    console.error("Error eliminando el registro:", error);
+    alert("No se pudo eliminar el registro. Revisa la consola para más detalles.");
+  }
 }
 
 function applyTableHeaderTheme(head) {
@@ -144,8 +194,3 @@ observer.observe(document.body, {
   attributes: true,
   attributeFilter: ["data-bs-theme"],
 });
-
-
-// logica de aqui hacia abajo por trabajar
-
-
