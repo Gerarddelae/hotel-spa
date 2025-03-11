@@ -105,12 +105,104 @@ function actionFormatter(value, row, index, jsonUrl) {
   `;
 }
 
-function editRow(button) {
+async function editRow(button) {
   const id = button.getAttribute("data-id");
-  const jsonUrl = button.getAttribute("data-path");
-  console.log(`Editar registro con ID ${id} en ${jsonUrl}`);
-  // Aquí puedes agregar la lógica para editar el registro seleccionado
+  const jsonUrl = "http://localhost:5000/api/users"; // Ruta de la API
+
+  try {
+    // Obtener los datos actuales del usuario
+    const response = await fetch(jsonUrl, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error al obtener datos: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const user = data.find((item) => item.id == id);
+
+    if (!user) {
+      alert("No se encontró el usuario.");
+      return;
+    }
+
+    // Llenar el formulario del modal con los datos actuales
+    document.getElementById("userEditId").value = user.id;
+    document.getElementById("userEditNombre").value = user.nombre;
+    document.getElementById("userEditEmail").value = user.email;
+    document.getElementById("userEditPassword").value = ""; // Dejar vacío para nueva contraseña
+    document.getElementById("userEditConfirmPassword").value = "";
+
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById("userEditModal"));
+    modal.show();
+
+    // Manejar la actualización cuando se envíe el formulario
+    document.getElementById("userEditForm").onsubmit = async function (event) {
+      event.preventDefault();
+
+      const nombre = document.getElementById("userEditNombre").value;
+      const email = document.getElementById("userEditEmail").value;
+      const password = document.getElementById("userEditPassword").value;
+      const confirmPassword = document.getElementById("userEditConfirmPassword").value;
+
+      if (password && password !== confirmPassword) {
+        alert("Las contraseñas no coinciden.");
+        return;
+      }
+
+      const updateData = {
+        id: parseInt(id),
+        nombre: nombre, // Ahora incluye el nombre
+        email: email,
+        role: "user"
+      };
+
+      if (password) {
+        updateData.password = password; // Solo enviar si cambia
+      }
+
+      try {
+        const putResponse = await fetch(jsonUrl, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(updateData)
+        });
+
+        if (!putResponse.ok) {
+          throw new Error(`Error al actualizar: ${putResponse.statusText}`);
+        }
+
+        alert("Usuario actualizado con éxito.");
+        modal.hide();
+
+        // **🔹 ACTUALIZAR DIRECTAMENTE LA TABLA CON BOOTSTRAP TABLE**
+        $('#usersTable').bootstrapTable('updateRow', {
+          index: button.closest("tr").rowIndex - 1, // Obtener el índice de la fila
+          row: updateData
+        });
+
+      } catch (error) {
+        console.error("Error al actualizar el usuario:", error);
+        alert("No se pudo actualizar el usuario. Revisa la consola.");
+      }
+    };
+
+  } catch (error) {
+    console.error("Error cargando datos del usuario:", error);
+    alert("Error al cargar la información del usuario.");
+  }
 }
+
+
+
 
 async function deleteRow(button) {
   const id = button.getAttribute("data-id");

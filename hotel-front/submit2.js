@@ -24,24 +24,39 @@ document.addEventListener("DOMContentLoaded", function() {
                         return;
                     }
 
+                    const method = form.dataset.method ? form.dataset.method.toUpperCase() : form.method.toUpperCase();
+                    if (method === "GET") {
+                        console.error("¡Error! Un formulario GET no puede enviar un cuerpo JSON.");
+                        return;
+                    }
+
                     try {
                         const response = await fetch(form.action, {
-                            method: form.method || "POST",
+                            method: method,
                             headers: {
                                 "Content-Type": "application/json",
                                 "Authorization": `Bearer ${token}`
                             },
-                            body: JSON.stringify(data)
+                            body: method !== "GET" ? JSON.stringify(data) : undefined
                         });
 
-                        const result = await response.json();
-                        console.log("Respuesta del servidor:", result);
+                        const contentType = response.headers.get("content-type");
+                        if (!response.ok) {
+                            throw new Error(`HTTP Error! Status: ${response.status}`);
+                        }
+
+                        if (contentType && contentType.includes("application/json")) {
+                            const result = await response.json();
+                            console.log("Respuesta del servidor:", result);
+                        } else {
+                            const textResult = await response.text();
+                            console.warn("El servidor devolvió un HTML en lugar de JSON:", textResult);
+                            alert("Error en el servidor. Revisa la consola.");
+                        }
 
                         if (response.ok) {
                             form.reset();
                             mostrarToast("Operación realizada con éxito.");
-                        } else {
-                            alert("Error: " + result.message);
                         }
                     } catch (error) {
                         console.error("Error en la petición:", error);
@@ -89,6 +104,5 @@ document.addEventListener("DOMContentLoaded", function() {
     manageContentVisibility();
     attachFormListeners();
 
-    // Verificar en consola el rol
     console.log("Rol en localStorage:", localStorage.getItem("role"));
 });
