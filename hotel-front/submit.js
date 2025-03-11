@@ -21,7 +21,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 form.addEventListener('submit', async function(event) {
                     event.preventDefault();
-                    console.log("Se evitó la recarga de la página");
                     const nombre = document.getElementById('nombreUser').value;
                     const email = document.getElementById('emailUser').value;
                     const password = document.getElementById('passwordForm').value;

@@ -41,35 +41,35 @@
     >
         <div class="container mt-4 ml-1">
           <div class="row">
-              <div class="col-md-6" id="adminContent" style="display: none;">
+              <div class="col-md-6" id="adminContent">
                   <div class="card">
                       <div class="card-header text-center">Registro de Usuario</div>
                       <div class="card-body">
-                          <form id="usuarioForm">
-                              <div class="mb-3">
-                                  <label for="nombre" class="form-label">Nombre</label>
-                                  <input type="text" class="form-control" id="nombreUser" required>
-                              </div>
-                              <div class="mb-3">
-                                  <label for="email" class="form-label">Correo Electrónico</label>
-                                  <input type="email" class="form-control" id="emailUser" required>
-                              </div>
-                              <div class="mb-3">
-                                  <label for="password" class="form-label">Contraseña</label>
-                                  <input type="password" class="form-control" id="passwordForm" required>
-                              </div>
-                              <div class="mb-3">
-                                  <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
-                                  <input type="password" class="form-control" id="confirmPasswordForm" required>
-                              </div>
-                              <button type="submit" class="btn btn-primary w-100">Registrar</button>
-                          </form>
+                          <form id="usuarioForm" class="auto-submit" action="http://localhost:5000/api/users" method="POST">
+                            <div class="mb-3">
+                                <label for="nombreUser" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="nombreUser" name="nombre" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="emailUser" class="form-label">Correo Electrónico</label>
+                                <input type="email" class="form-control" id="emailUser" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="passwordForm" class="form-label">Contraseña</label>
+                                <input type="password" class="form-control" id="passwordForm" name="password" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirmPasswordForm" class="form-label">Confirmar Contraseña</label>
+                                <input type="password" class="form-control" id="confirmPasswordForm" name="confirmPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Registrar</button>
+                        </form>                 
                       </div>
                   </div>
               </div>
           </div>
       </div>
-      <div class="alert alert-danger text-center" id="userContent" style="display: block;">
+      <div class="alert alert-danger text-center" id="userContent">
         Solo el administrador puede registrar nuevos usuarios.
     </div>
     </div>
