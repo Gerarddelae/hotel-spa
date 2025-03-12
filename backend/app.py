@@ -73,6 +73,10 @@ class Booking(db.Model):
     cliente = db.relationship("Client", backref="bookings")
     habitacion = db.relationship("Room", backref="bookings")  # Relación con Room
 
+
+# Diccionario de modelos
+MODELS = {"users": User, "clients": Client, "rooms": Room, "bookings": Booking}
+
 # Inicializar la base de datos dentro del contexto
 def init_db():
     with app.app_context():
@@ -95,8 +99,15 @@ def is_admin():
     return claims.get("role") == "admin"
 
 def remove_sensitive_fields(data, sensitive_fields=["password"]):
-    """ Elimina campos sensibles de una lista de diccionarios """
-    return [{k: v for k, v in item.items() if k not in sensitive_fields} for item in data]
+    """
+    Elimina campos sensibles de una lista de diccionarios o de un solo diccionario.
+    """
+    if isinstance(data, list):  # Si es una lista de diccionarios
+        return [{k: v for k, v in item.items() if k not in sensitive_fields} for item in data]
+    elif isinstance(data, dict):  # Si es un solo diccionario
+        return {k: v for k, v in data.items() if k not in sensitive_fields}
+    else:
+        return data  # Si no es ni lista ni diccionario, devolver el dato original
 
 @app.route("/api/auth/login", methods=["POST"])
 def login():
@@ -123,90 +134,133 @@ def get_current_user():
         "name": user.nombre
     }), 200
 
-# CRUD para Clientes, Habitaciones y Reservas
-@app.route("/api/<string:model>", methods=["GET", "POST", "PUT", "DELETE"])
+# Obtener todos los registros de un modelo
+@app.route("/api/<string:model>", methods=["GET"])
 @jwt_required()
-def handle_crud(model):
-    models = {"users": User, "clients": Client, "rooms": Room, "bookings": Booking}
-    if model not in models:
+def get_all(model):
+    if model not in MODELS:
         return jsonify({"error": "Modelo no válido"}), 400
-    Model = models[model]
 
-    if request.method == "GET":
-        items = Model.query.order_by(Model.id).all()  # Ordenar por ID
-        return jsonify(remove_sensitive_fields([
-            {column.name: getattr(item, column.name) for column in item.__table__.columns}
-            for item in items]))
+    Model = MODELS[model]
+    items = Model.query.order_by(Model.id).all()
+    return jsonify(remove_sensitive_fields([
+        {column.name: getattr(item, column.name) for column in item.__table__.columns}
+        for item in items
+    ]))
 
+# obtener un solo registro por id
+@app.route("/api/<string:model>/<int:item_id>", methods=["GET"])
+@jwt_required()
+def get_one(model, item_id):
+    if model not in MODELS:
+        return jsonify({"error": "Modelo no válido"}), 400
+
+    Model = MODELS[model]
+    item = Model.query.get(item_id)
+
+    if not item:
+        return jsonify({"error": "Registro no encontrado"}), 404
+
+    # Convertir el objeto a un diccionario
+    item_dict = {column.name: getattr(item, column.name) for column in item.__table__.columns}
+    
+    # Eliminar campos sensibles y devolver la respuesta
+    return jsonify(remove_sensitive_fields(item_dict))
+
+# Crear un nuevo registro
+@app.route("/api/<string:model>", methods=["POST"])
+@jwt_required()
+def create(model):
+    if model not in MODELS:
+        return jsonify({"error": "Modelo no válido"}), 400
+
+    Model = MODELS[model]
     data = request.get_json()
 
-    if request.method == "POST":
-        try:
-            if model == "users":
-                # Obtener el rol del usuario autenticado
-                claims = get_jwt()
-                if claims.get("role") != "admin":
-                    return jsonify({"error": "Acceso denegado. Solo los administradores pueden registrar usuarios."}), 403
+    try:
+        if model == "users":
+            claims = get_jwt()
+            if claims.get("role") != "admin":
+                return jsonify({"error": "Acceso denegado. Solo administradores pueden registrar usuarios."}), 403
 
-                # Crear nuevo usuario con nombre
-                new_item = User(
-                    nombre=data["nombre"],  # Incluir nombre
-                    email=data["email"],
-                    role=data.get("role", "user")
-                )
-                new_item.set_password(data["password"])
+            new_item = User(
+                nombre=data["nombre"],
+                email=data["email"],
+                role=data.get("role", "user")
+            )
+            new_item.set_password(data["password"])  # Hashear contraseña
 
-            elif model == "bookings":
-                # Convertir fechas de string a objeto date
-                data["check_in"] = datetime.strptime(data["check_in"], "%Y-%m-%d").date()
-                data["check_out"] = datetime.strptime(data["check_out"], "%Y-%m-%d").date()
-                new_item = Booking(**data)
+        elif model == "bookings":
+            data["check_in"] = datetime.strptime(data["check_in"], "%Y-%m-%d").date()
+            data["check_out"] = datetime.strptime(data["check_out"], "%Y-%m-%d").date()
+            new_item = Booking(**data)
 
-            else:
-                new_item = Model(**data)
+        else:
+            new_item = Model(**data)
 
-            db.session.add(new_item)
-            db.session.commit()
-            return jsonify({"message": "Registro creado exitosamente"}), 201
+        db.session.add(new_item)
+        db.session.commit()
+        return jsonify({"message": "Registro creado exitosamente"}), 201
 
-        except ValueError:
-            return jsonify({"error": "Formato de fecha inválido, usa YYYY-MM-DD"}), 400
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+    except ValueError:
+        return jsonify({"error": "Formato de fecha inválido, usa YYYY-MM-DD"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    elif request.method == "PUT":
-        claims = get_jwt()  # Obtener los claims del token JWT
+# Actualizar un registro por ID
+@app.route("/api/<string:model>/<int:item_id>", methods=["PUT"])
+@jwt_required()
+def update(model, item_id):
+    if model not in MODELS:
+        return jsonify({"error": "Modelo no válido"}), 400
 
-        # Si se intenta modificar un usuario, verificar que el rol sea admin
-        if model == "users" and claims.get("role") != "admin":
-            return jsonify({"error": "Acceso denegado. Solo los administradores pueden modificar usuarios."}), 403
+    Model = MODELS[model]
+    data = request.get_json()
+    claims = get_jwt()
 
-        item = Model.query.get(data["id"])
-        if item:
-            for key, value in data.items():
-                if key == "password" and model == "users":
-                    item.set_password(value)  # Asegurar el uso de hash para la contraseña
-                else:
-                    setattr(item, key, value)
-            db.session.commit()
-            return jsonify({"message": "Registro actualizado"})
+    if model == "users" and claims.get("role") != "admin":
+        return jsonify({"error": "Acceso denegado. Solo administradores pueden modificar usuarios."}), 403
 
+    item = Model.query.get(item_id)
+    if not item:
         return jsonify({"error": "Registro no encontrado"}), 404
 
-    
-    elif request.method == "DELETE":
-        claims = get_jwt()  # Obtener los claims del token JWT
+    # Validar email duplicado
+    if "email" in data and data["email"] != item.email:
+        existing_user = Model.query.filter_by(email=data["email"]).first()
+        if existing_user:
+            return jsonify({"error": "El correo ya está en uso por otro usuario"}), 400
 
-        # Si se intenta eliminar un usuario, verificar que el rol sea admin
-        if model == "users" and claims.get("role") != "admin":
-            return jsonify({"error": "Acceso denegado. Solo los administradores pueden eliminar usuarios."}), 403
+    # Actualizar los campos
+    for key, value in data.items():
+        if key == "password" and model == "users":
+            item.set_password(value)
+        else:
+            setattr(item, key, value)
 
-        item = Model.query.get(data["id"])
-        if item:
-            db.session.delete(item)
-            db.session.commit()
-            return jsonify({"message": "Registro eliminado"})       
+    db.session.commit()
+    return jsonify({"message": "Registro actualizado exitosamente"}), 200
+
+# Eliminar un registro por ID
+@app.route("/api/<string:model>/<int:item_id>", methods=["DELETE"])
+@jwt_required()
+def delete(model, item_id):
+    if model not in MODELS:
+        return jsonify({"error": "Modelo no válido"}), 400
+
+    Model = MODELS[model]
+    claims = get_jwt()
+
+    if model == "users" and claims.get("role") != "admin":
+        return jsonify({"error": "Acceso denegado. Solo administradores pueden eliminar usuarios."}), 403
+
+    item = Model.query.get(item_id)
+    if not item:
         return jsonify({"error": "Registro no encontrado"}), 404
+
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({"message": "Registro eliminado"}), 200
 
 if __name__ == "__main__":
     init_db()

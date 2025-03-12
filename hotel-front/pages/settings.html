@@ -126,41 +126,40 @@
 <!-- Modal de Edición de Usuario -->
 <div class="modal fade" id="userEditModal" tabindex="-1" aria-labelledby="userEditModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-      <div class="modal-content">
-          <div class="modal-header">
-              <h5 class="modal-title" id="userEditModalLabel">Editar Usuario</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                  <span aria-hidden="true">&times;</span>
-              </button>
-          </div>
-          <div class="modal-body">
-              <form id="userEditForm" class="auto-submit" action="http://localhost:5000/api/users" method="POST" data-method="PUT" novalidate>
-                  <input type="hidden" id="userEditId" name="id">
-
-                  <div class="form-group">
-                      <label for="userEditNombre">Nombre</label>
-                      <input type="text" class="form-control" id="userEditNombre" name="nombre" required>
-                  </div>
-
-                  <div class="form-group">
-                      <label for="userEditEmail">Correo Electrónico</label>
-                      <input type="email" class="form-control" id="userEditEmail" name="email" required>
-                  </div>
-
-                  <div class="form-group">
-                      <label for="userEditPassword">Nueva Contraseña</label>
-                      <input type="password" class="form-control" id="userEditPassword" name="password">
-                  </div>
-
-                  <div class="form-group">
-                      <label for="userEditConfirmPassword">Confirmar Nueva Contraseña</label>
-                      <input type="password" class="form-control" id="userEditConfirmPassword" name="confirmPassword">
-                  </div>
-
-                  <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-              </form>
-          </div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="userEditModalLabel">Editar Usuario</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
+      <div class="modal-body">
+        <form id="userEditForm"> <!-- ID del formulario -->
+          <input type="hidden" id="userEditId" name="id">
+
+          <div class="form-group">
+            <label for="userEditNombre">Nombre</label>
+            <input type="text" class="form-control" id="userEditNombre" name="nombre" required>
+          </div>
+
+          <div class="form-group">
+            <label for="userEditEmail">Correo Electrónico</label>
+            <input type="email" class="form-control" id="userEditEmail" name="email" required>
+          </div>
+
+          <div class="form-group">
+            <label for="userEditPassword">Nueva Contraseña</label>
+            <input type="password" class="form-control" id="userEditPassword" name="password">
+          </div>
+
+          <div class="form-group">
+            <label for="userEditConfirmPassword">Confirmar Nueva Contraseña</label>
+            <input type="password" class="form-control" id="userEditConfirmPassword" name="confirmPassword">
+          </div>
+
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
-

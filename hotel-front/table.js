@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Faltan atributos en el botón:", event.target);
           }
         });
-        button.hasEventListener = true; // Marcar el botón para evitar agregar múltiples listeners
+        button.hasEventListener = true;
       }
     });
   });
@@ -21,24 +21,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function loadTableData(path, head, body) {
   try {
-    const jsonUrl = path;
-    const jsonHead = head;
-    const jsonBody = body;
-    console.log("Cargando JSON desde:", jsonUrl);
-    const response = await fetch(jsonUrl, {
+    const response = await fetch(path, {
       method: "GET",
       headers: {
-          "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`
+        "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`
       }
     });
     if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
     const data = await response.json();
-    console.log("Datos JSON recibidos:", data.slice(0, 2));
 
     if (!data.length) throw new Error("El JSON está vacío o mal formateado");
 
-    generateTableHeaders(Object.keys(data[0]), jsonHead);
-    initializeTable(data, jsonBody, jsonUrl);
+    generateTableHeaders(Object.keys(data[0]), head);
+    initializeTable(data, body, path);
     applyTableHeaderTheme(head);
   } catch (error) {
     console.error("Error:", error);
@@ -59,14 +54,11 @@ function generateTableHeaders(headers, head) {
     .map((header) => `<th data-field="${header}">${header}</th>`)
     .join("");
   
-  tr.innerHTML += '<th data-field="actions">Acciones</th>'; // Agregar columna de acciones
-  
-  console.log("Encabezados generados:", headers);
+  tr.innerHTML += '<th data-field="actions">Acciones</th>';
   applyTableHeaderTheme(head);
 }
 
 function initializeTable(data, jsonBody, jsonUrl) {
-  console.log("#" + jsonBody);
   $("#" + jsonBody).bootstrapTable("destroy");
   
   const columns = Object.keys(data[0]).map((key) => ({
@@ -83,133 +75,49 @@ function initializeTable(data, jsonBody, jsonUrl) {
   
   $("#" + jsonBody).bootstrapTable({
     data: data,
-    columns: columns,
-    onRefresh: function (params) {
-      const activeButton = document.querySelector(".nav-link.search.active");
-      const path = activeButton.dataset.path;
-      const head = activeButton.dataset.head;
-      const body = activeButton.dataset.body;
-      if (path && head && body) {
-        loadTableData(path, head, body); // Recargar los datos cuando se presione el botón de actualizar
-      }
-    }
+    columns: columns
   });
-  
-  console.log("Tabla inicializada con éxito");
 }
 
 function actionFormatter(value, row, index, jsonUrl) {
+  // Mapeo de rutas de API a IDs de formularios
+  const formMapping = {
+    "/api/clients": "editClientForm", // Formulario para clientes
+    "/api/rooms": "editRoomForm",    // Formulario para habitaciones
+    "/api/bookings": "editBookingForm", // Formulario para reservas
+    "/api/users": "userEditForm" // Formulario para usuarios
+  };
+
+  // Extraer la parte base de jsonUrl (por ejemplo, "/api/users/1" -> "/api/users")
+  const baseUrl = jsonUrl.replace(/^https?:\/\/[^\/]+(\/api\/\w+).*$/, "$1");
+
+  // Obtener el ID del formulario basado en la ruta base
+  const formId = formMapping[baseUrl] || "defaultForm"; // Usa un formulario por defecto si no hay coincidencia
+
+  console.log(`Ruta base extraída: ${baseUrl}, ID del formulario: ${formId}`);
+
   return `
-    <button class="btn btn-warning btn-sm" data-index="${index}" data-id="${row.id}" data-path="${jsonUrl}" onclick="editRow(this)">Editar</button>
-    <button class="btn btn-danger btn-sm" data-index="${index}" data-id="${row.id}" data-path="${jsonUrl}" onclick="deleteRow(this)">Eliminar</button>
+    <button 
+      class="btn btn-warning btn-sm" 
+      data-index="${index}" 
+      data-id="${row.id}" 
+      data-path="${jsonUrl}" 
+      data-form="${formId}"
+      onclick="editRow(this)"
+    >
+      Editar
+    </button>
+    <button 
+      class="btn btn-danger btn-sm" 
+      data-index="${index}" 
+      data-id="${row.id}" 
+      data-path="${jsonUrl}" 
+      onclick="deleteRow(this)"
+    >
+      Eliminar
+    </button>
   `;
 }
-
-async function editRow(button) {
-  const id = button.getAttribute("data-id");
-  const jsonUrl = "http://localhost:5000/api/users"; // Ruta de la API
-
-  try {
-    // Obtener los datos actuales del usuario
-    const response = await fetch(jsonUrl, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error al obtener datos: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const user = data.find((item) => item.id == id);
-
-    if (!user) {
-      alert("No se encontró el usuario.");
-      return;
-    }
-
-    // Llenar el formulario del modal con los datos actuales
-    document.getElementById("userEditId").value = user.id;
-    document.getElementById("userEditNombre").value = user.nombre;
-    document.getElementById("userEditEmail").value = user.email;
-    document.getElementById("userEditPassword").value = ""; // Dejar vacío para nueva contraseña
-    document.getElementById("userEditConfirmPassword").value = "";
-
-    // Mostrar el modal
-    const modal = new bootstrap.Modal(document.getElementById("userEditModal"));
-    modal.show();
-
-    // Manejar la actualización cuando se envíe el formulario
-    document.getElementById("userEditForm").onsubmit = async function (event) {
-      event.preventDefault();
-
-      const nombre = document.getElementById("userEditNombre").value;
-      const email = document.getElementById("userEditEmail").value;
-      const password = document.getElementById("userEditPassword").value;
-      const confirmPassword = document.getElementById("userEditConfirmPassword").value;
-
-      if (password && password !== confirmPassword) {
-        alert("Las contraseñas no coinciden.");
-        return;
-      }
-
-      const updateData = {
-        id: parseInt(id),
-        nombre: nombre, // Ahora incluye el nombre
-        email: email,
-        role: "user"
-      };
-
-      if (password) {
-        updateData.password = password; // Solo enviar si cambia
-      }
-
-      try {
-        const putResponse = await fetch(jsonUrl, {
-          method: "PUT",
-          headers: {
-            "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(updateData)
-        });
-
-        if (!putResponse.ok) {
-          throw new Error(`Error al actualizar: ${putResponse.statusText}`);
-        }
-
-        alert("Usuario actualizado con éxito.");
-        modal.hide();
-
-        // **🔹 ACTUALIZAR DIRECTAMENTE LA TABLA CON BOOTSTRAP TABLE**
-        $('#usersTable').bootstrapTable('updateRow', {
-          index: button.closest("tr").rowIndex - 1, // Obtener el índice de la fila
-          row: updateData
-        });
-
-      } catch (error) {
-        console.error("Error al actualizar el usuario:", error);
-        alert("No se pudo actualizar el usuario. Revisa la consola.");
-      }
-    };
-
-  } catch (error) {
-    console.error("Error cargando datos del usuario:", error);
-    alert("Error al cargar la información del usuario.");
-  }
-}
-
-
-function mostrarToastEliminado() {
-  const toastEl = document.getElementById("deleteToast");
-  if (!toastEl) return;
-  const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
-  toast.show();
-}
-
-
 
 async function deleteRow(button) {
   const id = button.getAttribute("data-id");
@@ -231,13 +139,11 @@ async function deleteRow(button) {
   }
 
   try {
-    const response = await fetch(jsonUrl, {
+    const response = await fetch(`${jsonUrl}/${id}`, {
       method: "DELETE",
       headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ id }) // Enviar el ID en el cuerpo de la petición
+        "Authorization": `Bearer ${token}`
+      }
     });
 
     if (!response.ok) {
@@ -246,27 +152,134 @@ async function deleteRow(button) {
 
     alert(`Registro con ID ${id} eliminado exitosamente.`);
     console.log(`Registro con ID ${id} eliminado en ${jsonUrl}`);
-    // Intentar encontrar la tabla correcta
+    
     const table = button.closest("table");
     if (!table) {
       console.error("No se encontró la tabla para actualizar.");
       return;
     }
     
-    // Obtener el ID de la tabla BootstrapTable
     const tableId = table.getAttribute("id");
     if (!tableId) {
       console.error("No se encontró el ID de la tabla.");
       return;
     }
     
-    // Asegurar que el campo de eliminación coincide con el que usa bootstrapTable
     $("#" + tableId).bootstrapTable("remove", { field: "id", values: [parseInt(id)] });
-    mostrarToastEliminado();
-
   } catch (error) {
     console.error("Error eliminando el registro:", error);
     alert("No se pudo eliminar el registro. Revisa la consola para más detalles.");
+  }
+}
+
+async function editRow(button) {
+  const id = button.getAttribute("data-id"); // Obtener el ID del registro
+  const jsonUrl = button.getAttribute("data-path"); // Obtener la URL de la API
+  const formId = button.getAttribute("data-form"); // Obtener el ID del formulario
+
+  console.log(`Editando registro con ID: ${id}, URL: ${jsonUrl}, Formulario: ${formId}`);
+
+  if (!formId) {
+    console.error("No se proporcionó un ID de formulario válido.");
+    return;
+  }
+
+  try {
+    // Obtener los datos del registro desde la API
+    const response = await fetch(`${jsonUrl}/${id}`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error al obtener datos: ${response.statusText}`);
+    }
+
+    const record = await response.json();
+
+    if (!record) {
+      alert("No se encontró el registro.");
+      return;
+    }
+
+    // Obtener el formulario por su ID
+    const form = document.getElementById(formId);
+    if (!form) {
+      console.error(`No se encontró el formulario con ID: ${formId}`);
+      return;
+    }
+
+    // Llenar dinámicamente el formulario con los datos obtenidos
+    Object.keys(record).forEach((key) => {
+      const input = form.querySelector(`[name="${key}"]`);
+      if (input) {
+        input.value = record[key];
+      }
+    });
+
+    // Obtener el modal asociado al formulario
+    const modalElement = form.closest(".modal");
+    if (!modalElement) {
+      console.error("No se encontró el modal asociado al formulario.");
+      return;
+    }
+
+    // Mostrar el modal usando Bootstrap
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+
+    // Manejar la actualización al enviar el formulario
+    form.onsubmit = async function (event) {
+      event.preventDefault();
+
+      // Crear un objeto con los datos actualizados del formulario
+      const updatedData = {};
+      const inputs = form.querySelectorAll("[name]");
+      inputs.forEach((input) => {
+        updatedData[input.name] = input.value;
+      });
+
+      try {
+        // Enviar la solicitud PUT para actualizar el registro
+        const putResponse = await fetch(`${jsonUrl}/${id}`, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedData),
+        });
+
+        if (!putResponse.ok) {
+          throw new Error(`Error al actualizar: ${putResponse.statusText}`);
+        }
+
+        alert("Registro actualizado con éxito.");
+        modal.hide();
+
+        // Actualizar la fila correspondiente en la tabla
+        const table = button.closest("table");
+        if (table) {
+          const rowIndex = button.closest("tr").rowIndex - 1;
+          $(`#${table.id}`).bootstrapTable("updateRow", {
+            index: rowIndex,
+            row: updatedData,
+          });
+        } else {
+          console.warn("No se pudo encontrar la tabla para actualizar.");
+        }
+
+      } catch (error) {
+        console.error("Error al actualizar el registro:", error);
+        alert("No se pudo actualizar el registro. Revisa la consola.");
+      }
+    };
+
+  } catch (error) {
+    console.error("Error cargando datos del registro:", error);
+    alert("Error al cargar la información del registro.");
   }
 }
 
@@ -284,12 +297,3 @@ function applyTableHeaderTheme(head) {
     tableHead.classList.add("custom-header-light");
   }
 }
-
-const observer = new MutationObserver(() => {
-  applyTableHeaderTheme();
-});
-
-observer.observe(document.body, {
-  attributes: true,
-  attributeFilter: ["data-bs-theme"],
-});
