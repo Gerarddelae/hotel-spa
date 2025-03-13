@@ -76,40 +76,40 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    async function loadFormData(modal, form) {
-        const userId = form.dataset.userId;
-        if (!userId) return;
+    // async function loadFormData(modal, form) {
+    //     const userId = form.dataset.userId;
+    //     if (!userId) return;
 
-        const token = localStorage.getItem("jwtToken");
-        if (!token) {
-            alert("⚠️ No se encontró un token de autenticación. Por favor, inicia sesión.");
-            return;
-        }
+    //     const token = localStorage.getItem("jwtToken");
+    //     if (!token) {
+    //         alert("⚠️ No se encontró un token de autenticación. Por favor, inicia sesión.");
+    //         return;
+    //     }
 
-        try {
-            const response = await fetch(`${form.action}/${userId}`, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
+    //     try {
+    //         const response = await fetch(`${form.action}/${userId}`, {
+    //             method: "GET",
+    //             headers: {
+    //                 "Authorization": `Bearer ${token}`
+    //             }
+    //         });
 
-            const userData = await response.json();
-            console.log("📝 Datos obtenidos para el modal:", userData);
+    //         const userData = await response.json();
+    //         console.log("📝 Datos obtenidos para el modal:", userData);
 
-            if (response.ok) {
-                Object.keys(userData).forEach(key => {
-                    if (form[key]) {
-                        form[key].value = userData[key];
-                    }
-                });
-            } else {
-                alert("⚠️ No se pudieron cargar los datos.");
-            }
-        } catch (error) {
-            console.error("🚨 Error al obtener los datos:", error);
-        }
-    }
+    //         if (response.ok) {
+    //             Object.keys(userData).forEach(key => {
+    //                 if (form[key]) {
+    //                     form[key].value = userData[key];
+    //                 }
+    //             });
+    //         } else {
+    //             alert("⚠️ No se pudieron cargar los datos.");
+    //         }
+    //     } catch (error) {
+    //         console.error("🚨 Error al obtener los datos:", error);
+    //     }
+    // }
 
     function manageContentVisibility() {
         const adminContent = document.querySelector("#adminContent");
@@ -132,18 +132,18 @@ document.addEventListener("DOMContentLoaded", function () {
         new bootstrap.Toast(toastEl, { delay: 5000 }).show();
     }
 
-    document.querySelectorAll(".open-modal").forEach(button => {
-        button.addEventListener("click", function () {
-            const modalId = button.dataset.target;
-            const modal = document.querySelector(modalId);
-            const form = modal.querySelector("form.auto-submit");
+    // document.querySelectorAll(".open-modal").forEach(button => {
+    //     button.addEventListener("click", function () {
+    //         const modalId = button.dataset.target;
+    //         const modal = document.querySelector(modalId);
+    //         const form = modal.querySelector("form.auto-submit");
 
-            if (form) {
-                form.dataset.userId = button.dataset.userId;
-                loadFormData(modal, form);
-            }
-        });
-    });
+    //         if (form) {
+    //             form.dataset.userId = button.dataset.userId;
+    //             loadFormData(modal, form);
+    //         }
+    //     });
+    // });
 
     const observer = new MutationObserver(() => {
         manageContentVisibility();
