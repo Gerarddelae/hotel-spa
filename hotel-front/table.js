@@ -150,7 +150,9 @@ async function deleteRow(button) {
       throw new Error(`Error al eliminar: ${response.statusText}`);
     }
 
-    alert(`Registro con ID ${id} eliminado exitosamente.`);
+    window.mostrarToast("error"); // 🔴 Mostrar notificación de eliminación
+
+    //alert(`Registro con ID ${id} eliminado exitosamente.`);
     console.log(`Registro con ID ${id} eliminado en ${jsonUrl}`);
     
     const table = button.closest("table");
@@ -255,8 +257,7 @@ async function editRow(button) {
         if (!putResponse.ok) {
           throw new Error(`Error al actualizar: ${putResponse.statusText}`);
         }
-
-        alert("Registro actualizado con éxito.");
+        window.mostrarToast("update"); // ⚠️ Mostrar toast de actualización
         modal.hide();
 
         // Actualizar la fila correspondiente en la tabla

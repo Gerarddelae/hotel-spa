@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     let url = form.action;
 
                     if (method === "POST") {
-                        // POST mantiene la URL base, sin ID
+                        // Mantiene la URL base
                     } else if (method === "PUT" || method === "DELETE") {
                         const userId = form.dataset.userId;
                         if (!userId) {
@@ -41,7 +41,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         url = `${form.action}/${userId}`;
                     }
 
-                    // Si es DELETE, no se envía un cuerpo (body)
                     const options = {
                         method,
                         headers: {
@@ -61,9 +60,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         if (response.ok) {
                             form.reset();
-                            mostrarToast(method === "PUT" ? "Registro actualizado con éxito." : 
-                                         method === "DELETE" ? "Registro eliminado con éxito." :
-                                         "Registro creado con éxito.");
+                            mostrarToast(method === "PUT" ? "update" : 
+                                         method === "DELETE" ? "error" : "success");
                         } else {
                             alert("❌ Error: " + (result.message || "Ocurrió un problema en la solicitud."));
                         }
@@ -75,41 +73,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
-
-    // async function loadFormData(modal, form) {
-    //     const userId = form.dataset.userId;
-    //     if (!userId) return;
-
-    //     const token = localStorage.getItem("jwtToken");
-    //     if (!token) {
-    //         alert("⚠️ No se encontró un token de autenticación. Por favor, inicia sesión.");
-    //         return;
-    //     }
-
-    //     try {
-    //         const response = await fetch(`${form.action}/${userId}`, {
-    //             method: "GET",
-    //             headers: {
-    //                 "Authorization": `Bearer ${token}`
-    //             }
-    //         });
-
-    //         const userData = await response.json();
-    //         console.log("📝 Datos obtenidos para el modal:", userData);
-
-    //         if (response.ok) {
-    //             Object.keys(userData).forEach(key => {
-    //                 if (form[key]) {
-    //                     form[key].value = userData[key];
-    //                 }
-    //             });
-    //         } else {
-    //             alert("⚠️ No se pudieron cargar los datos.");
-    //         }
-    //     } catch (error) {
-    //         console.error("🚨 Error al obtener los datos:", error);
-    //     }
-    // }
 
     function manageContentVisibility() {
         const adminContent = document.querySelector("#adminContent");
@@ -124,27 +87,34 @@ document.addEventListener("DOMContentLoaded", function () {
         if (userForm) userForm.style.display = role === "admin" ? "block" : "none";
     }
 
-    function mostrarToast(mensaje) {
-        const toastEl = document.getElementById("registroToast");
-        if (!toastEl) return;
-        const toastBody = toastEl.querySelector(".toast-body");
-        toastBody.textContent = mensaje;
-        new bootstrap.Toast(toastEl, { delay: 5000 }).show();
-    }
-
-    // document.querySelectorAll(".open-modal").forEach(button => {
-    //     button.addEventListener("click", function () {
-    //         const modalId = button.dataset.target;
-    //         const modal = document.querySelector(modalId);
-    //         const form = modal.querySelector("form.auto-submit");
-
-    //         if (form) {
-    //             form.dataset.userId = button.dataset.userId;
-    //             loadFormData(modal, form);
-    //         }
-    //     });
-    // });
-
+    // hacer la funcion mostrar toast global
+    window.mostrarToast = function (type) {
+        let toastId = "";
+    
+        switch (type) {
+            case "success":
+                toastId = "registroToast"; // ✅ Registro exitoso
+                break;
+            case "error":
+                toastId = "deleteToast"; // ❌ Eliminación
+                break;
+            case "update":
+                toastId = "updateToast"; // ⚠️ Actualización de usuario
+                break;
+            default:
+                console.error("Tipo de toast no válido:", type);
+                return;
+        }
+    
+        const toastElement = document.getElementById(toastId);
+        if (toastElement) {
+            const toastInstance = new bootstrap.Toast(toastElement, { delay: 3000 }); // 3s de duración
+            toastInstance.show();
+        } else {
+            console.error("⚠️ No se encontró el elemento toast:", toastId);
+        }
+    };
+    
     const observer = new MutationObserver(() => {
         manageContentVisibility();
         attachFormListeners();
