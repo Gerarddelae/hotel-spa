@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             sidebarContainer.innerHTML = data;
             setupNavigation();
             logoutSetup();
-            const lastPage = localStorage.getItem("lastPage") || "home";
+            const lastPage = localStorage.getItem("lastPage") || "dashboard";
             loadPage(lastPage, true);
         });
 
@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 loadPage(newPage);
             });
         });
-        const activePage = localStorage.getItem("activeNavLink") || "home";
+        const activePage = localStorage.getItem("activeNavLink") || "dashboard";
         setActiveLink(activePage);
     }
 
@@ -88,7 +88,6 @@ document.addEventListener("DOMContentLoaded", async function () {
             .then(response => response.text())
             .then(data => {
                 console.log(`📌 Cargando contenido de /static/pages/${page}.html`);
-                console.log("✅ HTML recibido:", data);
                 
                 // Insertar contenido en #content
                 const contentContainer = document.getElementById("content");

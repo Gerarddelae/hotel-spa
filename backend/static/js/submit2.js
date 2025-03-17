@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         return;
                     }
 
-                    const token = localStorage.getItem("jwtToken");
+                    const token = localStorage.getItem("access_token");
                     if (!token) {
                         alert("⚠️ No se encontró un token de autenticación. Por favor, inicia sesión.");
                         return;

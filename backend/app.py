@@ -167,7 +167,15 @@ def login():
 @jwt_required()
 def get_current_user():
     current_user = get_jwt_identity()
-    return jsonify({"msg": "Acceso autorizado", "user": current_user}), 200
+    additional_claims = get_jwt()  # Obtiene los claims adicionales del token
+    user_role = additional_claims.get("role", "user")  # Asume "user" si no hay rol
+
+    return jsonify({
+        "msg": "Acceso autorizado",
+        "user": current_user,
+        "role": user_role
+    }), 200
+
 
 # Obtener todos los registros de un modelo
 @app.route("/api/<string:model>", methods=["GET"])

@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!button.hasEventListener) {
         button.addEventListener("click", (event) => {
           const { path, head, body } = event.target.dataset;
+          console.log(path);
           if (path && head && body) {
             loadTableData(path, head, body);
           } else {
@@ -24,7 +25,7 @@ async function loadTableData(path, head, body) {
     const response = await fetch(path, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`
+        "Authorization": `Bearer ${localStorage.getItem("access_token")}`
       }
     });
     if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
@@ -128,7 +129,7 @@ async function deleteRow(button) {
     return;
   }
 
-  const token = localStorage.getItem("jwtToken");
+  const token = localStorage.getItem("access_token");
   if (!token) {
     alert("No estás autenticado. Inicia sesión.");
     return;
@@ -191,7 +192,7 @@ async function editRow(button) {
     const response = await fetch(`${jsonUrl}/${id}`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
+        "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
       },
     });
 
@@ -248,7 +249,7 @@ async function editRow(button) {
         const putResponse = await fetch(`${jsonUrl}/${id}`, {
           method: "PUT",
           headers: {
-            "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(updatedData),
