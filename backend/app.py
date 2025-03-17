@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, request
+from functools import wraps
+from flask import Flask, jsonify, make_response, redirect, request, render_template, url_for
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt, get_jwt_identity
 from flask_sqlalchemy import SQLAlchemy
@@ -12,6 +13,7 @@ app.json.sort_keys = False  # No ordena las claves alfabéticamente
 app.json.ensure_ascii = False  # Permite caracteres especiales en UTF-8
 app.config["JWT_SECRET_KEY"] = "supersecretkey"
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=9)
+app.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
 
 # Crear la carpeta database si no existe
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -19,11 +21,19 @@ DB_PATH = os.path.join(BASE_DIR, "database", "hotel.db")
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["JWT_TOKEN_LOCATION"] = ["headers"]  # Asegurar que solo acepte tokens en headers
+app.config["JWT_HEADER_NAME"] = "Authorization"  # Nombre del encabezado
+app.config["JWT_HEADER_TYPE"] = "Bearer"  # Prefijo "Bearer"
+app.config["JWT_SECRET_KEY"] = "supersecretkey"
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=9)
+app.config["JWT_COOKIE_SECURE"] = False  # Solo si estás en desarrollo, evita que use HTTPS obligatorio
+
 
 db = SQLAlchemy(app)
-Migrate(app, db)
-JWTManager(app)
-CORS(app, origins="http://127.0.0.1:3000", supports_credentials=True)
+migrate = Migrate(app, db)  # Usa una variable para Migrate
+jwt = JWTManager(app)  # Usa una variable para JWTManager
+CORS(app, supports_credentials=True, expose_headers=["Authorization"])
+
 
 # Modelos
 class User(db.Model):
@@ -73,7 +83,6 @@ class Booking(db.Model):
     cliente = db.relationship("Client", backref="bookings")
     habitacion = db.relationship("Room", backref="bookings")  # Relación con Room
 
-
 # Diccionario de modelos
 MODELS = {"users": User, "clients": Client, "rooms": Room, "bookings": Booking}
 
@@ -109,30 +118,56 @@ def remove_sensitive_fields(data, sensitive_fields=["password"]):
     else:
         return data  # Si no es ni lista ni diccionario, devolver el dato original
 
+# Función para verificar autenticación en rutas de páginas
+def login_required(f):
+    @wraps(f)
+    @jwt_required()
+    def decorated_function(*args, **kwargs):
+        print("Identity:", get_jwt_identity())  # Depura si hay identidad
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route("/")
+def login_page():
+    return render_template('login.html')
+
+@app.route("/app")
+def index_page():
+    # Quitamos el @jwt_required() para permitir que la página cargue
+    # La verificación del token la haremos en el JavaScript
+    return render_template("index.html")
+
+
+@app.route('/<path:path>')
+def catch_all(path):
+    if path == "api/auth/login" or path == "":
+        return login_page()
+    return render_template('index.html')
+
 @app.route("/api/auth/login", methods=["POST"])
 def login():
-    data = request.get_json()
-    user = User.query.filter_by(email=data["email"]).first()
-    if user and checkpw(data["password"].encode('utf-8'), user.password.encode('utf-8')):
-        access_token = create_access_token(identity=user.email, additional_claims={"role": user.role})
-        return jsonify({"token": access_token, "role": user.role, "name": user.nombre}), 200
-    return jsonify({"error": "Credenciales incorrectas"}), 401
+    try:
+        data = request.get_json()
+        if not data or "email" not in data or "password" not in data:
+            return jsonify({"error": "Faltan campos requeridos"}), 400
 
-@app.route("/api/me", methods=["GET"])
+        user = User.query.filter_by(email=data["email"]).first()
+        if user and checkpw(data["password"].encode('utf-8'), user.password.encode('utf-8')):
+            access_token = create_access_token(identity=user.email, additional_claims={"role": user.role})
+            return jsonify({"access_token": access_token, "role": user.role, "name": user.nombre}), 200
+
+        return jsonify({"error": "Credenciales incorrectas"}), 401
+
+    except Exception as e:
+        print(f"Error en /api/auth/login: {e}")
+        return jsonify({"error": "Error interno del servidor"}), 500
+
+
+@app.route("/api/me")
 @jwt_required()
 def get_current_user():
-    current_user_email = get_jwt_identity()  # Obtener el email del usuario autenticado
-    claims = get_jwt()  # Obtener los claims del token
-
-    user = User.query.filter_by(email=current_user_email).first()
-    if not user:
-        return jsonify({"error": "Usuario no encontrado"}), 404
-
-    return jsonify({
-        "email": user.email,
-        "role": claims.get("role", "user"),
-        "name": user.nombre
-    }), 200
+    current_user = get_jwt_identity()
+    return jsonify({"msg": "Acceso autorizado", "user": current_user}), 200
 
 # Obtener todos los registros de un modelo
 @app.route("/api/<string:model>", methods=["GET"])
@@ -163,7 +198,7 @@ def get_one(model, item_id):
 
     # Convertir el objeto a un diccionario
     item_dict = {column.name: getattr(item, column.name) for column in item.__table__.columns}
-    
+
     # Eliminar campos sensibles y devolver la respuesta
     return jsonify(remove_sensitive_fields(item_dict))
 

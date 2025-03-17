@@ -2,68 +2,77 @@ document.addEventListener("DOMContentLoaded", async function () {
     const sidebarContainer = document.getElementById("sidebar-container");
     const contentContainer = document.getElementById("content");
     const usuario = localStorage.getItem("usuario");
-    const token = localStorage.getItem("jwtToken");
-    let isLoggedIn = localStorage.getItem("userLoggedIn");
+    const token = localStorage.getItem("access_token");
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 
-    const roleRequest = await fetch("http://127.0.0.1:5000/api/me", {
-        method: "GET",
-        headers: {
-            "Authorization": `Bearer ${token}`
-        }
-    })
-
-    const apiRole = await roleRequest.json()
-    localStorage.setItem("role", apiRole.role)
-
-    if (!token && !isLoggedIn) {
-        window.location.href = "login.html"; // Redirige solo si no estamos ya en index.html
-        return; // Detiene la ejecución para evitar que siga cargando
+    // Si no hay token, redirige al login
+    if (!token) {
+        window.location.href = "/";
+        return;
     }
-    
-    const userObserver = new MutationObserver((mutationsList, observer) => {
-       const userContainer = document.getElementById("userContainer")
-       
-       if (userContainer) {
-        observer.disconnect()
-        userContainer.innerHTML = usuario
-       }
-   })
 
-   userObserver.observe(document.body, { childList: true, subtree: true });
-   
+    try {
+        const roleRequest = await fetch("/api/me", {
+            method: "GET",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!roleRequest.ok) {
+            throw new Error("No autenticado");
+        }
+
+        const apiRole = await roleRequest.json();
+        localStorage.setItem("role", apiRole.role);
+    } catch (error) {
+        console.error("Error en la autenticación:", error);
+        localStorage.clear();
+        window.location.href = "/";
+        return;
+    }
+
+    // Verifica si el usuario está autenticado correctamente
+    if (!isLoggedIn) {
+        window.location.href = "/";
+        return;
+    }
+
+    const userObserver = new MutationObserver((mutationsList, observer) => {
+        const userContainer = document.getElementById("userContainer");
+        if (userContainer) {
+            observer.disconnect();
+            userContainer.textContent = usuario;
+        }
+    });
+
+    userObserver.observe(document.body, { childList: true, subtree: true });
+
     // Cargar la barra lateral
-    fetch("sidebar.html")
+    fetch("/static/pages/sidebar.html")
         .then(response => response.text())
         .then(data => {
             sidebarContainer.innerHTML = data;
             setupNavigation();
-            logoutSetup()
-            // Obtener la última página visitada o cargar "home" por defecto
+            logoutSetup();
             const lastPage = localStorage.getItem("lastPage") || "home";
             loadPage(lastPage, true);
         });
 
     function setupNavigation() {
         const links = document.querySelectorAll("#sidebar-container .nav-link");
-
         links.forEach(link => {
             link.addEventListener("click", function (event) {
                 event.preventDefault();
                 const newPage = this.getAttribute("aria-current").replace("#", "");
-                console.log(newPage);
                 setActiveLink(newPage);
                 loadPage(newPage);
             });
         });
-
-        // Aplicar la clase active a la última página activa al cargar
         const activePage = localStorage.getItem("activeNavLink") || "home";
         setActiveLink(activePage);
     }
 
     function setActiveLink(page) {
         const links = document.querySelectorAll("#sidebar-container .nav-link");
-
         links.forEach(link => {
             if (link.getAttribute("aria-current").replace("#", "") === page) {
                 link.classList.add("active");
@@ -71,34 +80,47 @@ document.addEventListener("DOMContentLoaded", async function () {
                 link.classList.remove("active");
             }
         });
-
         localStorage.setItem("activeNavLink", page);
     }
 
     function loadPage(page, isInitialLoad = false) {
-        fetch(`pages/${page}.html`)
+        fetch(`/static/pages/${page}.html`)
             .then(response => response.text())
             .then(data => {
-                contentContainer.innerHTML = data;
+                console.log(`📌 Cargando contenido de /static/pages/${page}.html`);
+                console.log("✅ HTML recibido:", data);
+                
+                // Insertar contenido en #content
+                const contentContainer = document.getElementById("content");
+                if (contentContainer) {
+                    contentContainer.innerHTML = data;
+                    console.log("🎯 Contenido insertado correctamente en #content");
+                } else {
+                    console.error("❌ No se encontró el contenedor #content");
+                }
+    
                 localStorage.setItem("lastPage", page);
+    
                 if (!isInitialLoad) {
                     history.pushState({ page }, "", `#${page}`);
                 } else {
                     history.replaceState({ page }, "", `#${page}`);
                 }
+            })
+            .catch(err => console.error(`❌ Error al cargar ${page}.html:`, err));
+    }
+    
+
+    function logoutSetup() {
+        const outButton = document.getElementById("logout");
+        if (outButton) {
+            outButton.addEventListener("click", function () {
+                localStorage.clear();
+                window.location.href = "/"; // Redirige a login
             });
+        }
     }
 
-    const logoutSetup = () => {
-        const outButton = document.getElementById("logout")
-        outButton.addEventListener("click", function () {
-            localStorage.removeItem("isLoggedIn"); // Eliminar sesión
-            localStorage.removeItem("jwtToken"); // Elimina el token
-            window.location.href = "login.html"; // Redirigir al login
-        });
-}
-
-    // Manejar cambios en el historial (botones de atrás y adelante)
     window.addEventListener("popstate", function (event) {
         if (event.state && event.state.page) {
             loadPage(event.state.page, true);
