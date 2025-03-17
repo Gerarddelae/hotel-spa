@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
           console.log("✅ Usuario autenticado, redirigiendo...");
           // Modificar esta línea en tu login.js
-          window.location.href = `/app?token=${encodeURIComponent(data.access_token)}`;
+          window.location.href = `/app`;
       } catch (error) {
           console.error("Error en la autenticación:", error);
           errorMessage.textContent = error.message;

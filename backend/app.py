@@ -118,15 +118,6 @@ def remove_sensitive_fields(data, sensitive_fields=["password"]):
     else:
         return data  # Si no es ni lista ni diccionario, devolver el dato original
 
-# Función para verificar autenticación en rutas de páginas
-def login_required(f):
-    @wraps(f)
-    @jwt_required()
-    def decorated_function(*args, **kwargs):
-        print("Identity:", get_jwt_identity())  # Depura si hay identidad
-        return f(*args, **kwargs)
-    return decorated_function
-
 @app.route("/")
 def login_page():
     return render_template('login.html')
