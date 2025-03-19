@@ -13,3 +13,7 @@ class User(db.Model):
         
     def check_password(self, password):
         return checkpw(password.encode('utf-8'), self.password.encode('utf-8'))
+    
+    def __repr__(self):
+    # Representación en cadena para debugging
+        return f"<User {self.id}: {self.email}>"

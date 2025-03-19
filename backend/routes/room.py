@@ -30,6 +30,12 @@ def get_room(item_id):
 def create_room():
     data = request.get_json()
     
+    # Verificar si ya existe una habitación con ese número
+    if 'num_habitacion' in data:
+        existing_room = Room.query.filter_by(num_habitacion=data.get('num_habitacion')).first()
+        if existing_room:
+            return jsonify({"error": "Ya existe una habitación con ese número"}), 400
+    
     try:
         new_item = Room(**data)
         db.session.add(new_item)
@@ -37,6 +43,12 @@ def create_room():
         return jsonify({"message": "Habitación creada exitosamente"}), 201
     
     except Exception as e:
+        db.session.rollback()  # Importante: hacer rollback en caso de error
+        
+        # Detectar si es un error de integridad (como duplicados)
+        if "UNIQUE constraint failed" in str(e) or "duplicate key" in str(e):
+            return jsonify({"error": "Ya existe una habitación con ese número"}), 400
+            
         return jsonify({"error": str(e)}), 500
 
 @room_bp.route("/api/rooms/<int:item_id>", methods=["PUT"])
