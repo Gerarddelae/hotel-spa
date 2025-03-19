@@ -22,3 +22,8 @@ class Config:
     JWT_HEADER_NAME = "Authorization"
     JWT_HEADER_TYPE = "Bearer"
     JWT_COOKIE_SECURE = False  # Cambiar a True en producción
+
+class TestConfig(Config):
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'  # Base de datos en memoria
+    TESTING = True
+    JWT_SECRET_KEY = 'test_secret_key'  # Clave secreta para pruebas

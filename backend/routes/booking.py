@@ -1,9 +1,9 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from extensions import db
-from models import Booking
+from ..extensions import db
+from ..models import Booking
 from datetime import datetime
-from utils.helpers import remove_sensitive_fields
+from ..utils.helpers import remove_sensitive_fields
 
 booking_bp = Blueprint('booking', __name__)
 

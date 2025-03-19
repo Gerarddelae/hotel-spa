@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt
-from extensions import db
-from models import User
-from utils.helpers import remove_sensitive_fields
+from ..extensions import db
+from ..models import User
+from ..utils.helpers import remove_sensitive_fields
 
 user_bp = Blueprint('user', __name__)
 
