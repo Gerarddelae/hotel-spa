@@ -4,3 +4,4 @@ venv/
 __pycache__/
 backend/data/users_hashed.json
 backend/database/hotel.db
+.pytest_cache/
