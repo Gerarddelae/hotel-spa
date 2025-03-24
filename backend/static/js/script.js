@@ -89,17 +89,35 @@ document.addEventListener("DOMContentLoaded", async function () {
             .then(data => {
                 console.log(`📌 Cargando contenido de /static/pages/${page}.html`);
                 
-                // Insertar contenido en #content
                 const contentContainer = document.getElementById("content");
                 if (contentContainer) {
                     contentContainer.innerHTML = data;
                     console.log("🎯 Contenido insertado correctamente en #content");
+
+                    if (page === "booking") {
+                        console.log("🔄 Cargando clientes y habitaciones...");
+                        setTimeout(() => {
+                            if (typeof window.cargarClientesYHabitaciones === "function") {
+                                window.cargarClientesYHabitaciones();
+                                console.log("✅ Clientes y habitaciones cargados.");
+                            } else {
+                                console.error("❌ La función cargarClientesYHabitaciones no está disponible en window.");
+                            }
+
+                            if (typeof window.inicializarFormulario === "function") {
+                                window.inicializarFormulario();
+                                console.log("✅ Formulario inicializado correctamente.");
+                            } else {
+                                console.error("❌ La función inicializarFormulario no está disponible en window.");
+                            }
+                        }, 500);
+                    }
                 } else {
                     console.error("❌ No se encontró el contenedor #content");
                 }
-    
+
                 localStorage.setItem("lastPage", page);
-    
+
                 if (!isInitialLoad) {
                     history.pushState({ page }, "", `#${page}`);
                 } else {
@@ -108,6 +126,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             })
             .catch(err => console.error(`❌ Error al cargar ${page}.html:`, err));
     }
+    
     
 
     function logoutSetup() {
