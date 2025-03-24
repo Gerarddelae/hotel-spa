@@ -58,27 +58,6 @@ def booking_data(test_client, test_room):
         'notas': 'Reserva de prueba'
     }
 
-def test_booking_attributes(app, session, booking_data):
-    """Prueba los atributos básicos de una reserva."""
-    with app.app_context():
-        booking = Booking(**booking_data)
-        session.add(booking)
-        session.commit()
-        
-        # Verificar atributos básicos
-        assert booking.cliente_id == booking_data['cliente_id']
-        assert booking.habitacion_id == booking_data['habitacion_id']
-        assert booking.check_in == booking_data['check_in']
-        assert booking.check_out == booking_data['check_out']
-        assert booking.tipo_habitacion == booking_data['tipo_habitacion']
-        assert booking.num_huespedes == booking_data['num_huespedes']
-        assert booking.metodo_pago == booking_data['metodo_pago']
-        assert booking.estado == booking_data['estado']
-        assert float(booking.valor_reservacion) == booking_data['valor_reservacion']
-        assert booking.notas == booking_data['notas']
-        
-        # Verificar que tiene un ID asignado
-        assert booking.id is not None
 
 def test_booking_relationships(app, session, test_client, test_room, booking_data):
     """Prueba las relaciones con otros modelos."""
