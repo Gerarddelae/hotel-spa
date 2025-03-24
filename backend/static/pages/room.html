@@ -1,0 +1,81 @@
+<h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="45" stroke-width="2">
+    <path d="M14 12v.01"></path>
+    <path d="M3 21h18"></path>
+    <path d="M6 21v-16a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v16"></path>
+  </svg> Room</h1>
+  <ul class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link active"
+        id="add-room-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#add-room-pane"
+        type="button"
+        role="tab"
+        aria-controls="add-room-pane"
+        aria-selected="true"
+      >
+        Add Room
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link search"
+        id="search-room-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#search-room-pane"
+        type="button"
+        role="tab"
+        aria-controls="search-room-pane"
+        aria-selected="false"
+        data-path="/api/rooms"
+        data-head="roomHead"
+        data-body="roomsTable"
+      >
+        Search Room
+      </button>
+  </ul>
+  <div class="tab-content" id="myTabContent">
+    <div
+      class="tab-pane fade show active"
+      id="add-room-pane"
+      role="tabpanel"
+      aria-labelledby="add-room-tab"
+      tabindex="0"
+    >
+      Aqui se registraran habitaciones nuevas
+    </div>
+    <div
+      class="tab-pane fade"
+      id="search-room-pane"
+      role="tabpanel"
+      aria-labelledby="search-room-tab"
+      tabindex="0"
+    >
+    <div class="table-responsive">
+      <table id="roomsTable" 
+      class="table table-striped table-bordered"
+      data-toggle="table" 
+      data-search="true" 
+      data-pagination="true" 
+      data-show-toggle="true" 
+      data-show-refresh="true" 
+      data-show-columns="true"
+      data-show-columns-toggle-all="true">
+        <thead class="table-dark" id="roomHead"></thead>
+        <tbody id="roomBody"></tbody>
+      </table>
+    </div>
+    </div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div id="deleteToast" class="toast text-white bg-danger" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="toast-header">
+              <strong class="me-auto">❌ Eliminación</strong>
+              <small class="text-muted">Justo ahora</small>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+          <div class="toast-body">
+              Registro eliminado con éxito.
+          </div>
+      </div>
+    </div>
