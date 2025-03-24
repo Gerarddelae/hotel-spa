@@ -29,9 +29,27 @@ async function loadTableData(path, head, body) {
       }
     });
     if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-    const data = await response.json();
+    let data = await response.json();
 
     if (!data.length) throw new Error("El JSON está vacío o mal formateado");
+
+    // Filtrar y formatear datos para la ruta de reservas
+    if (path === '/api/bookings') {
+      data = data.map(item => {
+        // Eliminar campos específicos
+        const { cliente_id, habitacion_id, ...filteredItem } = item;
+        
+        // Formatear fechas
+        if (filteredItem.check_in) {
+          filteredItem.check_in = formatDate(filteredItem.check_in);
+        }
+        if (filteredItem.check_out) {
+          filteredItem.check_out = formatDate(filteredItem.check_out);
+        }
+        
+        return filteredItem;
+      });
+    }
 
     generateTableHeaders(Object.keys(data[0]), head);
     initializeTable(data, body, path);
@@ -42,6 +60,25 @@ async function loadTableData(path, head, body) {
   }
 }
 
+// Función auxiliar para formatear fechas
+function formatDate(isoString) {
+  if (!isoString) return 'N/A';
+  
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  } catch (error) {
+    console.error('Error formateando fecha:', error);
+    return isoString; // Devolver la cadena original si hay error
+  }
+}
 function generateTableHeaders(headers, head) {
   const tableHead = document.getElementById(head);
   if (!tableHead) throw new Error("No se encontró tableHead");
