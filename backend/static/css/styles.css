@@ -123,6 +123,9 @@ th, td {
     border-color: var(--bs-border-color) !important;
 }
 
+#datetimerange-input2 {
+    z-index: 9999; /* Asegúrate de que sea mayor que otros elementos */
+}
 
 
 

@@ -174,14 +174,13 @@
     </div>
 
 
-    <!-- Modal de Reserva -->
+ <!-- Modal de Reserva -->
 <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg"> <!-- Usamos modal-lg para que sea más ancho -->
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="bookingModalLabel">Formulario de Reserva</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form id="editBookingForm" class="auto-submit" action="http://localhost:5000/api/bookings" method="POST" autocomplete="off">
@@ -189,19 +188,19 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label for="nombreBooking" class="form-label">Nombre del Cliente</label>
-                <select class="form-select" id="nombreBooking" required></select>
+                <select class="form-select" id="nombreBooking" name="cliente_id" required></select>
               </div>
             </div>
             <div class="col-md-6">
               <div class="form-group">
-                <label for="datetimerange-input1" class="form-label">Rango de Fechas</label>
-                <input type="text" class="form-control" id="datetimerange-input1" required autocomplete="off">
+                <label for="datetimerange-input2" class="form-label">Rango de Fechas</label>
+                <input type="text" class="form-control" id="datetimerange-input2" name="datetimerange" required autocomplete="off">
               </div>
             </div>
             <div class="col-md-6">
               <div class="form-group">
                 <label for="num_habitacion" class="form-label">Número de Habitación</label>
-                <select class="form-select" id="num_habitacion" required></select>
+                <select class="form-select" id="num_habitacion" name="habitacion_id" required></select>
               </div>
             </div>
             <div class="col-md-6">
@@ -219,7 +218,7 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label for="precio_noche" class="form-label">Precio por Noche</label>
-                <input type="text" class="form-control" id="precio_noche" readonly>
+                <input type="text" class="form-control" id="precio_noche" name="precio_noche" readonly>
               </div>
             </div>
             <div class="col-md-6">
@@ -249,14 +248,14 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label for="notas" class="form-label">Notas</label>
-                <textarea class="form-control" id="notas" rows="3"></textarea>
+                <textarea class="form-control" id="notas" name="notas" rows="3"></textarea>
               </div>
             </div>
           </div>
           <input type="hidden" id="check_in" name="check_in">
           <input type="hidden" id="check_out" name="check_out">
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
             <button type="submit" class="btn btn-primary">Guardar</button>
           </div>
         </form>
@@ -264,4 +263,5 @@
     </div>
   </div>
 </div>
+
 
