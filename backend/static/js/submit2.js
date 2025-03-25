@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             data[key] = value;
                         }
                     });
-                    
+
                     console.log("📩 Datos enviados:", data);
 
                     if (data.password && data.confirmPassword && data.password !== data.confirmPassword) {
@@ -53,7 +53,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     };
 
-                    if (method !== "DELETE") {
+                    // Solo agregar body si el método no es GET o HEAD
+                    if (method !== "GET" && method !== "HEAD" && method !== "DELETE") {
                         options.headers["Content-Type"] = "application/json";
                         options.body = JSON.stringify(data);
                     }
@@ -95,7 +96,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // hacer la funcion mostrar toast global
     window.mostrarToast = function (type) {
         let toastId = "";
-    
+
         switch (type) {
             case "success":
                 toastId = "registroToast"; // ✅ Registro exitoso
@@ -110,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("Tipo de toast no válido:", type);
                 return;
         }
-    
+
         const toastElement = document.getElementById(toastId);
         if (toastElement) {
             const toastInstance = new bootstrap.Toast(toastElement, { delay: 3000 }); // 3s de duración
@@ -119,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error("⚠️ No se encontró el elemento toast:", toastId);
         }
     };
-    
+
     const observer = new MutationObserver(() => {
         manageContentVisibility();
         attachFormListeners();

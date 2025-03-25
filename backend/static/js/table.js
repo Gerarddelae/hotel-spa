@@ -19,49 +19,79 @@ document.addEventListener("DOMContentLoaded", () => {
 
   tabObserver.observe(document.body, { childList: true, subtree: true });
 
+  console.log("El DOM está completamente cargado.");
 
+  // Esperar a que el <thead> esté disponible
+  waitForElement("#bookingHead", (element) => {
+    console.log("El elemento <thead> está disponible:", element);
+    loadTableData("/api/bookings", "bookingHead", "bookingBody");
+  });
 });
 
+function waitForElement(selector, callback) {
+  const observer = new MutationObserver((mutations, observerInstance) => {
+    const element = document.querySelector(selector);
+    if (element) {
+      observerInstance.disconnect();
+      callback(element);
+    }
+  });
 
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+let isLoadingTable = false;
 
 async function loadTableData(path, head, body) {
-  try {
-    const response = await fetch(path, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-      },
-    });
-    if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-    let data = await response.json();
-
-    if (!data.length) throw new Error("El JSON está vacío o mal formateado");
-
-    // Filtrar y formatear datos para la ruta de reservas
-    if (path === "/api/bookings") {
-      data = data.map((item) => {
-        // Eliminar campos específicos
-        const { cliente_id, habitacion_id, ...filteredItem } = item;
-
-        // Formatear fechas
-        if (filteredItem.check_in) {
-          filteredItem.check_in = formatDate(filteredItem.check_in);
-        }
-        if (filteredItem.check_out) {
-          filteredItem.check_out = formatDate(filteredItem.check_out);
-        }
-
-        return filteredItem;
-      });
+    if (isLoadingTable) {
+        console.warn("La tabla ya se está cargando. Ignorando llamada duplicada.");
+        return;
     }
 
-    generateTableHeaders(Object.keys(data[0]), head);
-    initializeTable(data, body, path);
-    applyTableHeaderTheme(head);
-  } catch (error) {
-    console.error("Error:", error);
-    alert("Error al cargar los datos. Revisa la consola.");
-  }
+    isLoadingTable = true;
+
+    try {
+        const response = await fetch(path, {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+        });
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        let data = await response.json();
+
+        if (!data.length) throw new Error("El JSON está vacío o mal formateado");
+
+        // Filtrar y formatear datos para la ruta de reservas
+        if (path === "/api/bookings") {
+            data = data.map((item) => {
+                const { cliente_id, habitacion_id, ...filteredItem } = item;
+
+                // Formatear fechas
+                if (filteredItem.check_in) {
+                    filteredItem.check_in = formatDate(filteredItem.check_in);
+                }
+                if (filteredItem.check_out) {
+                    filteredItem.check_out = formatDate(filteredItem.check_out);
+                }
+
+                return filteredItem;
+            });
+        }
+
+        console.log("Generando encabezados para el ID:", head);
+        ensureTableStructure("bookingTable"); // Asegurar la estructura de la tabla
+        generateTableHeaders(Object.keys(data[0]), head); // Generar encabezados
+        cleanTableContainer(body); // Limpiar el contenido del cuerpo de la tabla
+        initializeTable(data, body, path); // Inicializar la tabla
+
+        applyTableHeaderTheme(head); // Aplicar tema al encabezado
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error al cargar los datos. Revisa la consola.");
+    } finally {
+        isLoadingTable = false;
+    }
 }
 
 // Función auxiliar para formatear fechas
@@ -225,110 +255,116 @@ async function deleteRow(button) {
 }
 
 async function editRow(button) {
-  const id = button.getAttribute("data-id"); // Obtener el ID del registro
-  const jsonUrl = button.getAttribute("data-path"); // Obtener la URL de la API
-  const formId = button.getAttribute("data-form"); // Obtener el ID del formulario
+    const id = button.getAttribute("data-id"); // Obtener el ID del registro
+    const jsonUrl = button.getAttribute("data-path"); // Obtener la URL de la API
+    const formId = button.getAttribute("data-form"); // Obtener el ID del formulario
 
-  console.log(
-    `Editando registro con ID: ${id}, URL: ${jsonUrl}, Formulario: ${formId}`
-  );
+    console.log(
+        `Editando registro con ID: ${id}, URL: ${jsonUrl}, Formulario: ${formId}`
+    );
 
-  if (!formId) {
-    console.error("No se proporcionó un ID de formulario válido.");
-    return;
-  }
-
-  try {
-    // Obtener los datos del registro desde la API
-    const response = await fetch(`${jsonUrl}/${id}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error al obtener datos: ${response.statusText}`);
+    if (!formId) {
+        console.error("No se proporcionó un ID de formulario válido.");
+        return;
     }
 
-    const record = await response.json();
-    console.log("Datos del registro:", record);
-
-    if (!record) {
-      alert("No se encontró el registro.");
-      return;
-    }
-
-    // Obtener el formulario por su ID
-    const form = document.getElementById(formId);
-    if (!form) {
-      console.error(`No se encontró el formulario con ID: ${formId}`);
-      return;
-    }
-
-    // Cambiar la acción del formulario para actualizar
-    form.action = `${jsonUrl}/${id}`;
-    form.method = "PUT";
-
-    // Si es un formulario de reservación, necesitamos manejo especial
-    if (formId === "editBookingForm") {
-      prepareBookingModalForEdit(record, form);
-    } else {
-      // Para otros formularios, llenar normalmente
-      fillFormWithData(record, form);
-    }
-
-    // Obtener el modal asociado al formulario
-    const modalElement = form.closest(".modal");
-    if (!modalElement) {
-      console.error("No se encontró el modal asociado al formulario.");
-      return;
-    }
-
-    // Mostrar el modal usando Bootstrap
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
-
-    // Manejar la actualización al enviar el formulario
-    form.onsubmit = async function (event) {
-      event.preventDefault();
-
-      // Crear un objeto con los datos actualizados del formulario
-      const formData = new FormData(form);
-      const updatedData = {};
-      formData.forEach((value, key) => {
-        updatedData[key] = value;
-      });
-
-      try {
-        // Enviar la solicitud PUT para actualizar el registro
-        const putResponse = await fetch(`${jsonUrl}/${id}`, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedData),
+    try {
+        // Obtener los datos del registro desde la API
+        const response = await fetch(`${jsonUrl}/${id}`, {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
         });
 
-        if (!putResponse.ok) {
-          throw new Error(`Error al actualizar: ${putResponse.statusText}`);
+        if (!response.ok) {
+            throw new Error(`Error al obtener datos: ${response.statusText}`);
         }
 
-        window.mostrarToast("update");
-        modal.hide();
+        const record = await response.json();
+        console.log("Datos del registro:", record);
 
-        // Actualizar la tabla
-        refreshTable(button, jsonUrl);
-      } catch (error) {
-        console.error("Error al actualizar el registro:", error);
-        alert("No se pudo actualizar el registro. Revisa la consola.");
-      }
-    };
-  } catch (error) {
-    console.error("Error cargando datos del registro:", error);
-    alert("Error al cargar la información del registro.");
-  }
+        if (!record) {
+            alert("No se encontró el registro.");
+            return;
+        }
+
+        // Obtener el formulario por su ID
+        const form = document.getElementById(formId);
+        if (!form) {
+            console.error(`No se encontró el formulario con ID: ${formId}`);
+            return;
+        }
+
+        // Cambiar la acción del formulario para actualizar
+        form.action = `${jsonUrl}/${id}`;
+        form.method = "PUT";
+
+        // Llenar el formulario con los datos del registro
+        fillFormWithData(record, form);
+
+        // Obtener el modal asociado al formulario
+        const modalElement = form.closest(".modal");
+        if (!modalElement) {
+            console.error("No se encontró el modal asociado al formulario.");
+            return;
+        }
+
+        // Mostrar el modal usando Bootstrap
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+
+        // Manejar la actualización al enviar el formulario
+        form.onsubmit = async function (event) {
+            event.preventDefault();
+
+            // Crear un objeto con los datos actualizados del formulario
+            const formData = new FormData(form);
+            const updatedData = {};
+            formData.forEach((value, key) => {
+                updatedData[key] = value;
+            });
+
+            try {
+                // Enviar la solicitud PUT para actualizar el registro
+                const putResponse = await fetch(`${jsonUrl}/${id}`, {
+                    method: "PUT",
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(updatedData),
+                });
+
+                if (!putResponse.ok) {
+                    throw new Error(`Error al actualizar: ${putResponse.statusText}`);
+                }
+
+                window.mostrarToast("update");
+                modal.hide();
+
+                // Actualizar la fila correspondiente en la tabla
+                const table = button.closest("table");
+                if (table) {
+                    const rowIndex = button.closest("tr").rowIndex - 1; // Obtener el índice de la fila
+                    console.log(`Actualizando la fila en el índice: ${rowIndex}`);
+                    $(`#${table.id}`).bootstrapTable("updateRow", {
+                        index: rowIndex,
+                        row: updatedData,
+                    });
+                    console.log("Fila actualizada con éxito:", updatedData);
+                } else {
+                    console.error("No se encontró la tabla para actualizar.");
+                }
+            } catch (error) {
+                console.error("Error al actualizar el registro:", error);
+                alert("No se pudo actualizar el registro. Revisa la consola.");
+            }
+        };
+    } catch (error) {
+        console.error("Error cargando datos del registro:", error);
+        alert("Error al cargar la información del registro.");
+    }
 }
 
 // Función para refrescar la tabla después de actualizar
@@ -657,5 +693,41 @@ function applyTableHeaderTheme(head) {
   } else {
     tableHead.classList.add("custom-header-light");
   }
+}
+
+function ensureTableStructure(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) {
+        console.error(`No se encontró la tabla con ID: ${tableId}`);
+        return;
+    }
+
+    // Verificar y crear <thead> si no existe
+    let thead = table.querySelector("thead");
+    if (!thead) {
+        thead = document.createElement("thead");
+        thead.id = `${tableId}Head`;
+        table.appendChild(thead);
+    }
+
+    // Verificar y crear <tbody> si no existe
+    let tbody = table.querySelector("tbody");
+    if (!tbody) {
+        tbody = document.createElement("tbody");
+        tbody.id = `${tableId}Body`;
+        table.appendChild(tbody);
+    }
+}
+
+function cleanTableContainer(bodyId) {
+    const tableBody = document.getElementById(bodyId);
+    if (!tableBody) {
+        console.error(`No se encontró el cuerpo de la tabla con ID: ${bodyId}`);
+        return;
+    }
+
+    // Limpia el contenido del cuerpo de la tabla
+    tableBody.innerHTML = "";
+    console.log(`El contenido del cuerpo de la tabla con ID ${bodyId} ha sido limpiado.`);
 }
 
