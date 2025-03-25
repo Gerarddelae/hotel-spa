@@ -23,9 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (selector === "#nombreBooking") {
                 // Configurar el evento change para actualizar el campo oculto
                 elemento.addEventListener('change', function(event) {
-                    console.log(this.value);
                     const selectedValue = this.value;
-                    console.log("Cliente seleccionado, ID:", selectedValue);
                     
                     // Actualizar o crear el campo oculto con el ID
                     let hiddenInput = document.getElementById('cliente_id_hidden');
@@ -34,6 +32,27 @@ document.addEventListener("DOMContentLoaded", function () {
                         hiddenInput.type = 'hidden';
                         hiddenInput.id = 'cliente_id_hidden';
                         hiddenInput.name = 'cliente_id';
+                        this.closest('form').appendChild(hiddenInput);
+                    }
+                    hiddenInput.value = selectedValue;
+                });
+            }
+
+            // Para el selector de habitaciones, configurar el manejo del ID
+            if (selector === "#num_habitacion") {
+                // Configurar el evento change para actualizar el campo oculto
+                elemento.addEventListener('change', function(event) {
+                    const selectedValue = this.value;
+                    console.log("Habitación seleccionada ID:", selectedValue);
+                    console.log(this);
+                    
+                    // Actualizar o crear el campo oculto con el ID
+                    let hiddenInput = document.getElementById('habitacion_id_hidden');
+                    if (!hiddenInput) {
+                        hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.id = 'habitacion_id_hidden';
+                        hiddenInput.name = 'habitacion_id';
                         this.closest('form').appendChild(hiddenInput);
                     }
                     hiddenInput.value = selectedValue;
@@ -71,65 +90,57 @@ document.addEventListener("DOMContentLoaded", function () {
 
         inicializarChoices("#nombreBooking");
         
-        // Después de inicializar Choices, configurar el campo oculto
-        if (nombreSelect.options.length > 0) {
-            // Obtener el valor del primer cliente
-            const firstClientId = nombreSelect.options[0].value;
-            
-            // Crear o actualizar el campo oculto
-            let hiddenInput = document.getElementById('client_id_hidden');
-            if (!hiddenInput) {
-                hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.id = 'client_id_hidden';
-                hiddenInput.name = 'client_id';
-                nombreSelect.closest('form').appendChild(hiddenInput);
-            }
-            hiddenInput.value = firstClientId;
-            
-            console.log("Valor inicial de client_id:", firstClientId);
-        }
+
     })
     .catch(error => console.error("Error al cargar clientes:", error));
 
-    // Obtener habitaciones desde la API
-    fetch("/api/rooms", {
-        headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(response => response.json())
-    .then(data => {
-        const habitacionSelect = document.getElementById("num_habitacion");
-        if (!habitacionSelect) return;
-        habitacionSelect.innerHTML = ""; // Limpiar opciones previas
+        // Obtener habitaciones desde la API
+        fetch("/api/rooms", {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const habitacionSelect = document.getElementById("num_habitacion");
+            if (!habitacionSelect) return;
+            habitacionSelect.innerHTML = ""; // Limpiar opciones previas
+            
+            // Agregar opción de placeholder
+            let placeholderOption = document.createElement("option");
+            placeholderOption.value = "";
+            placeholderOption.textContent = "Seleccionar habitación...";
+            placeholderOption.selected = true;
+            habitacionSelect.appendChild(placeholderOption);
 
-        // Filtrar solo habitaciones disponibles
-        const habitacionesDisponibles = data.filter(hab => hab.disponibilidad === "Disponible");
-        console.log("Habitaciones disponibles:", habitacionesDisponibles);
+            // Filtrar solo habitaciones disponibles
+            const habitacionesDisponibles = data.filter(hab => hab.disponibilidad === "Disponible");
+            console.log("Habitaciones disponibles:", habitacionesDisponibles);
 
-        localStorage.setItem("habitaciones", JSON.stringify(habitacionesDisponibles)); // Guardar en localStorage
+            localStorage.setItem("habitaciones", JSON.stringify(habitacionesDisponibles)); // Guardar en localStorage
 
-        habitacionesDisponibles.forEach(hab => {
-            let option = document.createElement("option");
-            option.value = hab.num_habitacion;
-            option.textContent = `Habitación ${hab.num_habitacion}`;
-            habitacionSelect.appendChild(option);
-        });
+            habitacionesDisponibles.forEach(hab => {
+                let option = document.createElement("option");
+                option.value = hab.id;
+                option.textContent = `Habitación ${hab.num_habitacion}`;
+                option.setAttribute('data-habitacion-id', hab.id);
+                habitacionSelect.appendChild(option);
+            });
 
-        inicializarChoices("#num_habitacion");
-    })
-    .catch(error => console.error("Error al cargar habitaciones:", error));
-
+            inicializarChoices("#num_habitacion");
+        })
+        .catch(error => console.error("Error al cargar habitaciones:", error));
     }
 
     window.cargarClientesYHabitaciones = cargarClientesYHabitaciones;
 
     function inicializarFormulario() {
         const habitacionSelect = document.getElementById("num_habitacion");
+        console.log(habitacionSelect);
         if (!habitacionSelect) return;
     
         habitacionSelect.addEventListener("change", function () {
             const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
-            const habitacionSeleccionada = habitaciones.find(h => h.num_habitacion == habitacionSelect.value);
+            console.log(habitaciones);
+            const habitacionSeleccionada = habitaciones.find(h => h.id == habitacionSelect.value);
             
             if (habitacionSeleccionada) {
                 document.getElementById("tipo_habitacion").value = habitacionSeleccionada.tipo;
@@ -164,9 +175,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 // Actualizar el input visible con el formato correcto
                 dateInput.value = start.format('YYYY-MM-DD HH:mm') + ' - ' + end.format('YYYY-MM-DD HH:mm');
                 
-                // Actualizar los campos ocultos
-                document.getElementById("check_in").value = start.toISOString();
-                document.getElementById("check_out").value = end.toISOString();
+                // Actualizar los campos ocultos con el formato esperado por el servidor
+                document.getElementById("check_in").value = start.format('YYYY-MM-DDTHH:mm:ss');
+                document.getElementById("check_out").value = end.format('YYYY-MM-DDTHH:mm:ss');
                 
                 calcularTotal();
             });
@@ -193,7 +204,7 @@ document.addEventListener("DOMContentLoaded", function () {
             let horas = checkOut.diff(checkIn, 'hours', true);
             let dias = Math.ceil(horas / 24);
             let precioPorNoche = parseFloat(precioNocheInput.value) || 0;
-            totalPagarInput.value = dias > 0 ? `$${(dias * precioPorNoche).toFixed(2)}` : "$0.00";
+            totalPagarInput.value = dias > 0 ? `${(dias * precioPorNoche).toFixed(2)}` : "0.00";
         }
     }
 });

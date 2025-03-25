@@ -68,7 +68,7 @@
                   <div class="row g-3">
                       <div class="col-md-6">
                           <label for="nombre" class="form-label">Nombre del Cliente</label>
-                          <select class="form-select" id="nombreBooking" name="nombreBooking" required></select>
+                          <select class="form-select" id="nombreBooking" required></select>
                       </div>
                       <div class="col-md-6">
                           <label for="datetimerange-input1" class="form-label">Rango de Fechas</label>
@@ -76,7 +76,7 @@
                       </div>
                       <div class="col-md-6">
                           <label for="num_habitacion" class="form-label">Número de Habitación</label>
-                          <select class="form-select" id="num_habitacion" name="num_habitacion" required></select>
+                          <select class="form-select" id="num_habitacion" required></select>
                       </div>
                       <div class="col-md-6">
                           <label for="tipo_habitacion" class="form-label">Tipo de Habitación</label>
@@ -84,7 +84,7 @@
                       </div>
                       <div class="col-md-6">
                           <label for="num_huespedes" class="form-label">Número de Huéspedes</label>
-                          <input type="number" class="form-control" id="num_huespedes" name="num_huespedes" required min="1">
+                          <input type="number" class="form-control" id="num_huespedes" name="num_huespedes" required min="1" autocomplete="off">
                       </div>
                       <div class="col-md-6">
                           <label for="precio_noche" class="form-label">Precio por Noche</label>
@@ -159,3 +159,16 @@
         </div>
     </div>
   </div>
+      <!-- Toasts de notificaciones -->
+      <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="registroToast" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">✅ Registro</strong>
+                <small class="text-muted">Justo ahora</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Reservacio registrada con éxito.
+            </div>
+        </div>
+    </div>
