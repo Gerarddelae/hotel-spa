@@ -95,7 +95,8 @@ document.addEventListener("DOMContentLoaded", async function () {
                     console.log("🎯 Contenido insertado correctamente en #content");
 
                     if (page === "booking") {
-                        console.log("🔄 Cargando clientes y habitaciones...");
+                        console.log("🔄 Cargando página de reservas...");
+                        // Aumentar el tiempo de espera para asegurar que el DOM esté listo
                         setTimeout(() => {
                             if (typeof window.cargarClientesYHabitaciones === "function") {
                                 window.cargarClientesYHabitaciones();
@@ -103,14 +104,14 @@ document.addEventListener("DOMContentLoaded", async function () {
                             } else {
                                 console.error("❌ La función cargarClientesYHabitaciones no está disponible en window.");
                             }
-
+                    
                             if (typeof window.inicializarFormulario === "function") {
                                 window.inicializarFormulario();
                                 console.log("✅ Formulario inicializado correctamente.");
                             } else {
                                 console.error("❌ La función inicializarFormulario no está disponible en window.");
                             }
-                        }, 500);
+                        }, 800); // Aumentado a 800ms
                     }
                 } else {
                     console.error("❌ No se encontró el contenedor #content");

@@ -58,59 +58,71 @@
       aria-labelledby="add-booking-tab"
       tabindex="0"
     >
-        <div class="container mt-3 ml-2">
-          <div class="card shadow-lg">
-              <div class="card-header text-center">
-                  <h2>Formulario de Reserva</h2>
-              </div>
-              <div class="card-body">
-                  <form id="bookingForm" class="auto-submit" action="http://localhost:5000/api/bookings" method="POST" autocomplete="off">
-                      <div class="row g-3">
-                          <div class="col-md-6">
-                              <label for="nombre" class="form-label">Nombre del Cliente</label>
-                              <select class="form-select" id="nombreBooking" required></select>
-                          </div>
-                          <div class="col-md-6">
-                              <label for="datetimerange-input1" class="form-label">Rango de Fechas</label>
-                              <input type="text" class="form-control" id="datetimerange-input1" required autocomplete="off">
-                          </div>
-                          <div class="col-md-6">
-                              <label for="num_habitacion" class="form-label">Número de Habitación</label>
-                              <select class="form-select" id="num_habitacion" required></select>
-                          </div>
-                          <div class="col-md-6">
-                              <label for="tipo_habitacion" class="form-label">Tipo de Habitación</label>
-                              <input type="text" class="form-control" id="tipo_habitacion" readonly>
-                          </div>
-                          <div class="col-md-6">
-                              <label for="num_huespedes" class="form-label">Número de Huéspedes</label>
-                              <input type="number" class="form-control" id="num_huespedes" required min="1">
-                          </div>
-                          <div class="col-md-6">
-                              <label for="precio_noche" class="form-label">Precio por Noche</label>
-                              <input type="text" class="form-control" id="precio_noche" readonly>
-                          </div>
-                          <div class="col-md-6">
-                              <label for="total_pagar" class="form-label">Total a Pagar</label>
-                              <input type="text" class="form-control" id="total_pagar" readonly>
-                          </div>
-                          <div class="col-md-6">
-                              <label for="metodo_pago" class="form-label">Método de Pago</label>
-                              <select class="form-select" id="metodo_pago" required>
-                                  <option value="Tarjeta">Tarjeta</option>
-                                  <option value="Efectivo">Efectivo</option>
-                              </select>
-                          </div>
+    <div class="container mt-3 ml-2">
+      <div class="card shadow-lg">
+          <div class="card-header text-center">
+              <h2>Formulario de Reserva</h2>
+          </div>
+          <div class="card-body">
+              <form id="bookingForm" class="auto-submit" action="http://localhost:5000/api/bookings" method="POST" autocomplete="off">
+                  <div class="row g-3">
+                      <div class="col-md-6">
+                          <label for="nombre" class="form-label">Nombre del Cliente</label>
+                          <select class="form-select" id="nombreBooking" name="nombreBooking" required></select>
                       </div>
-                      <input type="hidden" id="check_in" name="check_in">
-                      <input type="hidden" id="check_out" name="check_out">
-                      <div class="text-center mt-4">
-                          <button type="submit" class="btn btn-primary">Guardar</button>
+                      <div class="col-md-6">
+                          <label for="datetimerange-input1" class="form-label">Rango de Fechas</label>
+                          <input type="text" class="form-control" id="datetimerange-input1" required autocomplete="off">
                       </div>
-                  </form>
-              </div>
+                      <div class="col-md-6">
+                          <label for="num_habitacion" class="form-label">Número de Habitación</label>
+                          <select class="form-select" id="num_habitacion" name="num_habitacion" required></select>
+                      </div>
+                      <div class="col-md-6">
+                          <label for="tipo_habitacion" class="form-label">Tipo de Habitación</label>
+                          <input type="text" class="form-control" id="tipo_habitacion" name="tipo_habitacion" readonly>
+                      </div>
+                      <div class="col-md-6">
+                          <label for="num_huespedes" class="form-label">Número de Huéspedes</label>
+                          <input type="number" class="form-control" id="num_huespedes" name="num_huespedes" required min="1">
+                      </div>
+                      <div class="col-md-6">
+                          <label for="precio_noche" class="form-label">Precio por Noche</label>
+                          <input type="text" class="form-control" id="precio_noche" readonly>
+                      </div>
+                      <div class="col-md-6">
+                          <label for="total_pagar" class="form-label">Total a Pagar</label>
+                          <input type="text" class="form-control" id="total_pagar" name="valor_reservacion" readonly>
+                      </div>
+                      <div class="col-md-6">
+                          <label for="metodo_pago" class="form-label">Método de Pago</label>
+                          <select class="form-select" id="metodo_pago" name="metodo_pago" required>
+                              <option value="Tarjeta">Tarjeta</option>
+                              <option value="Efectivo">Efectivo</option>
+                          </select>
+                      </div>
+                      <div class="col-md-6">
+                          <label for="estado_reserva" class="form-label">Estado de la Reserva</label>
+                          <select class="form-select" id="estado_reserva" name="estado" required>
+                              <option value="pendiente">Pendiente</option>
+                              <option value="confirmada">Confirmada</option>
+                          </select>
+                      </div>
+                      <div class="col-md-6">
+                          <label for="notas" class="form-label">Notas</label>
+                          <textarea class="form-control" id="notas" rows="3"></textarea>
+                      </div>
+                  </div>
+                  <input type="hidden" id="check_in" name="check_in">
+                  <input type="hidden" id="check_out" name="check_out">
+                  <div class="text-center mt-4">
+                      <button type="submit" class="btn btn-primary">Guardar</button>
+                  </div>
+              </form>
           </div>
       </div>
+    </div>
+    
     </div>
     <div
       class="tab-pane fade"

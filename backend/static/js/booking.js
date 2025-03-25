@@ -1,4 +1,15 @@
 document.addEventListener("DOMContentLoaded", function () {
+    function inicializarChoices(selector) {
+        const elemento = document.querySelector(selector);
+
+        if (elemento && !elemento.choicesInstance) {
+            elemento.choicesInstance = new Choices(elemento, {
+                removeItemButton: true,
+                searchEnabled: true
+            });
+        }
+    }
+
     function cargarClientesYHabitaciones() {
         const token = localStorage.getItem("access_token");
         if (!token) {
@@ -23,32 +34,37 @@ document.addEventListener("DOMContentLoaded", function () {
                 nombreSelect.appendChild(option);
             });
 
-            new Choices(nombreSelect);
+            inicializarChoices("#nombreBooking");
         })
         .catch(error => console.error("Error al cargar clientes:", error));
 
-        // Obtener habitaciones desde la API
-        fetch("/api/rooms", {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const habitacionSelect = document.getElementById("num_habitacion");
-            if (!habitacionSelect) return;
-            habitacionSelect.innerHTML = ""; // Limpiar opciones previas
+    // Obtener habitaciones desde la API
+    fetch("/api/rooms", {
+        headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const habitacionSelect = document.getElementById("num_habitacion");
+        if (!habitacionSelect) return;
+        habitacionSelect.innerHTML = ""; // Limpiar opciones previas
 
-            localStorage.setItem("habitaciones", JSON.stringify(data)); // Guardar en localStorage
+        // Filtrar solo habitaciones disponibles
+        const habitacionesDisponibles = data.filter(hab => hab.disponibilidad === "Disponible");
+        console.log("Habitaciones disponibles:", habitacionesDisponibles);
 
-            data.forEach(hab => {
-                let option = document.createElement("option");
-                option.value = hab.num_habitacion;
-                option.textContent = `Habitación ${hab.num_habitacion}`;
-                habitacionSelect.appendChild(option);
-            });
+        localStorage.setItem("habitaciones", JSON.stringify(habitacionesDisponibles)); // Guardar en localStorage
 
-            new Choices(habitacionSelect);
-        })
-        .catch(error => console.error("Error al cargar habitaciones:", error));
+        habitacionesDisponibles.forEach(hab => {
+            let option = document.createElement("option");
+            option.value = hab.num_habitacion;
+            option.textContent = `Habitación ${hab.num_habitacion}`;
+            habitacionSelect.appendChild(option);
+        });
+
+        inicializarChoices("#num_habitacion");
+    })
+    .catch(error => console.error("Error al cargar habitaciones:", error));
+
     }
 
     window.cargarClientesYHabitaciones = cargarClientesYHabitaciones;
@@ -56,7 +72,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function inicializarFormulario() {
         const habitacionSelect = document.getElementById("num_habitacion");
         if (!habitacionSelect) return;
-
+    
         habitacionSelect.addEventListener("change", function () {
             const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
             const habitacionSeleccionada = habitaciones.find(h => h.num_habitacion == habitacionSelect.value);
@@ -69,23 +85,40 @@ document.addEventListener("DOMContentLoaded", function () {
                 calcularTotal();
             }
         });
-
-        const dateRangeInput = document.querySelector("#datetimerange-input1");
-        if (dateRangeInput) {
-            new DateRangePicker(dateRangeInput, { 
+    
+        // Deshabilitar la escritura manual en el campo de fecha
+        const dateInput = document.getElementById("datetimerange-input1");
+        if (dateInput) {
+            // Prevenir entrada de teclado
+            dateInput.addEventListener('keydown', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            // Establecer como solo lectura
+            dateInput.setAttribute('readonly', 'readonly');
+            
+            // Inicializar el DateRangePicker
+            new DateRangePicker('datetimerange-input1', { 
                 timePicker: true, 
-                alwaysShowCalendars: true, 
-                locale: { format: "YYYY-MM-DD HH:mm" } 
+                alwaysShowCalendars: true,
+                startDate: moment().startOf('day'),
+                endDate: moment().startOf('day').add(1, 'days'),
+                locale: { format: "YYYY-MM-DD HH:mm" },
+                showDropdowns: true
             }, function (start, end) {
+                // Actualizar el input visible con el formato correcto
+                dateInput.value = start.format('YYYY-MM-DD HH:mm') + ' - ' + end.format('YYYY-MM-DD HH:mm');
+                
+                // Actualizar los campos ocultos
                 document.getElementById("check_in").value = start.toISOString();
                 document.getElementById("check_out").value = end.toISOString();
+                
                 calcularTotal();
             });
-        } else {
-            console.error("Elemento #datetimerange-input1 no encontrado");
         }
     }
-
+    
     window.inicializarFormulario = inicializarFormulario;
 
     function calcularTotal() {
@@ -120,33 +153,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (form) {
                     observer.disconnect();
                     cargarClientesYHabitaciones();
-                    inicializarFormulario();
-                    new MutationObserver((mutations) => {
-                        mutations.forEach(mutation => {
-                            if (mutation.type === "attributes" && mutation.attributeName === "class") {
-                                if (!form.classList.contains("hidden")) {
-                                    cargarClientesYHabitaciones();
-                                    inicializarFormulario();
-                                }
-                            }
-                        });
-                    }).observe(form, { attributes: true });
+                   // inicializarFormulario();
                 }
             });
             observer.observe(document.body, { childList: true, subtree: true });
             return;
         }
-
-        new MutationObserver((mutations) => {
-            mutations.forEach(mutation => {
-                if (mutation.type === "attributes" && mutation.attributeName === "class") {
-                    if (!formContainer.classList.contains("hidden")) {
-                        cargarClientesYHabitaciones();
-                        inicializarFormulario();
-                    }
-                }
-            });
-        }).observe(formContainer, { attributes: true });
     }
 
     observarFormulario();

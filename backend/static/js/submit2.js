@@ -10,9 +10,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     const formData = new FormData(form);
                     const data = {};
                     formData.forEach((value, key) => {
-                        data[key] = value;
+                        if (key === "nombreBooking") {
+                            const selectElement = form.querySelector(`#${key}`);
+                            data[key] = selectElement ? selectElement.options[selectElement.selectedIndex].text : value;
+                        } else {
+                            data[key] = value;
+                        }
                     });
-
+                    
                     console.log("📩 Datos enviados:", data);
 
                     if (data.password && data.confirmPassword && data.password !== data.confirmPassword) {
