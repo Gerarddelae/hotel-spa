@@ -238,6 +238,7 @@ async function editRow(button) {
     }
 
     const record = await response.json();
+    console.log(record);
 
     if (!record) {
       alert("No se encontró el registro.");
