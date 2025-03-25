@@ -1,12 +1,44 @@
 document.addEventListener("DOMContentLoaded", function () {
     function inicializarChoices(selector) {
         const elemento = document.querySelector(selector);
-
+    
         if (elemento && !elemento.choicesInstance) {
+            // Primero, guardamos el valor seleccionado actual (si existe)
+            const currentValue = elemento.value;
+            
+            // Inicializar Choices con configuración específica
             elemento.choicesInstance = new Choices(elemento, {
                 removeItemButton: true,
-                searchEnabled: true
+                searchEnabled: true,
+                itemSelectText: '',
+                shouldSort: false,
+                // Deshabilitar la selección automática del primer elemento
+                addItems: false,
+                // Evitar que seleccione un elemento por defecto
+                placeholderValue: 'Seleccionar...',
+                placeholder: true
             });
+    
+            // Para el selector de clientes, configurar el manejo del ID
+            if (selector === "#nombreBooking") {
+                // Configurar el evento change para actualizar el campo oculto
+                elemento.addEventListener('change', function(event) {
+                    console.log(this.value);
+                    const selectedValue = this.value;
+                    console.log("Cliente seleccionado, ID:", selectedValue);
+                    
+                    // Actualizar o crear el campo oculto con el ID
+                    let hiddenInput = document.getElementById('cliente_id_hidden');
+                    if (!hiddenInput) {
+                        hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.id = 'cliente_id_hidden';
+                        hiddenInput.name = 'cliente_id';
+                        this.closest('form').appendChild(hiddenInput);
+                    }
+                    hiddenInput.value = selectedValue;
+                });
+            }
         }
     }
 
@@ -17,26 +49,48 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // Obtener clientes desde la API
-        fetch("/api/clients", {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const nombreSelect = document.getElementById("nombreBooking");
-            if (!nombreSelect) return;
-            nombreSelect.innerHTML = ""; // Limpiar opciones previas
 
-            data.forEach(cliente => {
-                let option = document.createElement("option");
-                option.value = cliente.id;
-                option.textContent = cliente.nombre;
-                nombreSelect.appendChild(option);
-            });
+    // Obtener clientes desde la API
+    fetch("/api/clients", {
+        headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const nombreSelect = document.getElementById("nombreBooking");
+        if (!nombreSelect) return;
+        nombreSelect.innerHTML = ""; // Limpiar opciones previas
 
-            inicializarChoices("#nombreBooking");
-        })
-        .catch(error => console.error("Error al cargar clientes:", error));
+        data.forEach(cliente => {
+            let option = document.createElement("option");
+            option.value = cliente.id;
+            option.textContent = cliente.nombre;
+            // Agregar un atributo data para mayor seguridad
+            option.setAttribute('data-client-id', cliente.id);
+            nombreSelect.appendChild(option);
+        });
+
+        inicializarChoices("#nombreBooking");
+        
+        // Después de inicializar Choices, configurar el campo oculto
+        if (nombreSelect.options.length > 0) {
+            // Obtener el valor del primer cliente
+            const firstClientId = nombreSelect.options[0].value;
+            
+            // Crear o actualizar el campo oculto
+            let hiddenInput = document.getElementById('client_id_hidden');
+            if (!hiddenInput) {
+                hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = 'client_id_hidden';
+                hiddenInput.name = 'client_id';
+                nombreSelect.closest('form').appendChild(hiddenInput);
+            }
+            hiddenInput.value = firstClientId;
+            
+            console.log("Valor inicial de client_id:", firstClientId);
+        }
+    })
+    .catch(error => console.error("Error al cargar clientes:", error));
 
     // Obtener habitaciones desde la API
     fetch("/api/rooms", {
@@ -142,24 +196,4 @@ document.addEventListener("DOMContentLoaded", function () {
             totalPagarInput.value = dias > 0 ? `$${(dias * precioPorNoche).toFixed(2)}` : "$0.00";
         }
     }
-
-    function observarFormulario() {
-        const formContainer = document.getElementById("bookingForm");
-
-        if (!formContainer) {
-            console.warn("Formulario no encontrado. Se observará el DOM en espera de su aparición.");
-            const observer = new MutationObserver(() => {
-                const form = document.getElementById("bookingForm");
-                if (form) {
-                    observer.disconnect();
-                    cargarClientesYHabitaciones();
-                   // inicializarFormulario();
-                }
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
-            return;
-        }
-    }
-
-    observarFormulario();
 });
