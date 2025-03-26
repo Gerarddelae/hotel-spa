@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
         button.addEventListener("click", (event) => {
           const { path, head, body } = event.target.dataset;
           console.log(path);
+          console.log(head);
           if (path && head && body) {
             loadTableData(path, head, body);
           } else {
@@ -21,28 +22,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   console.log("El DOM está completamente cargado.");
 
-  // Esperar a que el <thead> esté disponible
-  waitForElement("#bookingHead", (element) => {
-    console.log("El elemento <thead> está disponible:", element);
-    loadTableData("/api/bookings", "bookingHead", "bookingBody");
-  });
 });
 
-function waitForElement(selector, callback) {
-  const observer = new MutationObserver((mutations, observerInstance) => {
-    const element = document.querySelector(selector);
-    if (element) {
-      observerInstance.disconnect();
-      callback(element);
-    }
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
-}
-
+// Variable global para evitar llamadas duplicadas
 let isLoadingTable = false;
 
 async function loadTableData(path, head, body) {
+    console.log(head);
     if (isLoadingTable) {
         console.warn("La tabla ya se está cargando. Ignorando llamada duplicada.");
         return;
@@ -80,11 +66,11 @@ async function loadTableData(path, head, body) {
         }
 
         console.log("Generando encabezados para el ID:", head);
-        ensureTableStructure("bookingTable"); // Asegurar la estructura de la tabla
+        //ensureTableStructure("bookingTable"); // Asegurar la estructura de la tabla
         generateTableHeaders(Object.keys(data[0]), head); // Generar encabezados
         cleanTableContainer(body); // Limpiar el contenido del cuerpo de la tabla
         initializeTable(data, body, path); // Inicializar la tabla
-
+        console.log(head);
         applyTableHeaderTheme(head); // Aplicar tema al encabezado
     } catch (error) {
         console.error("Error:", error);
@@ -117,29 +103,38 @@ function formatDate(isoString) {
 function generateTableHeaders(headers, head) {
   const tableHead = document.getElementById(head);
   if (!tableHead) throw new Error("No se encontró tableHead");
-  let tr = tableHead.querySelector("tr");
-  if (!tr) {
-    tr = document.createElement("tr");
-    tableHead.appendChild(tr);
-  }
 
+  // Limpiar el contenido del <thead> antes de agregar nuevos encabezados
+  tableHead.innerHTML = "";
+
+  // Crear una nueva fila de encabezados
+  const tr = document.createElement("tr");
   tr.innerHTML = headers
     .map((header) => `<th data-field="${header}">${header}</th>`)
     .join("");
 
+  // Agregar la columna de acciones
   tr.innerHTML += '<th data-field="actions">Acciones</th>';
+
+  // Agregar la fila al <thead>
+  tableHead.appendChild(tr);
+
+  // Aplicar el tema al encabezado
   applyTableHeaderTheme(head);
 }
 
 function initializeTable(data, jsonBody, jsonUrl) {
+  // Destruir la tabla existente si hay una
   $("#" + jsonBody).bootstrapTable("destroy");
 
+  // Crear las columnas, manteniendo la columna de acciones
   const columns = Object.keys(data[0]).map((key) => ({
     field: key,
     title: key,
     sortable: true,
   }));
 
+  // Agregar columna de acciones
   columns.push({
     field: "actions",
     title: "Acciones",
@@ -147,10 +142,33 @@ function initializeTable(data, jsonBody, jsonUrl) {
       actionFormatter(value, row, index, jsonUrl),
   });
 
+  // Inicializar la tabla con todas las opciones
   $("#" + jsonBody).bootstrapTable({
     data: data,
     columns: columns,
+    search: true,
+    pagination: true,
+    showRefresh: true, // Activar el botón de refrescar integrado
+    onRefresh: function () {
+      // Obtener el tab activo basado en la tabla actual
+      const tableId = jsonBody.replace("Body", "");
+      const activeTab = document.querySelector(
+        `.nav-link.search[data-body="${jsonBody}"]`
+      );
+
+      if (activeTab) {
+        const path = activeTab.dataset.path;
+        const head = activeTab.dataset.head;
+        const body = activeTab.dataset.body;
+
+        if (path && head && body) {
+          loadTableData(path, head, body);
+        }
+      }
+    },
   });
+
+  console.log("Tabla inicializada con éxito");
 }
 
 function actionFormatter(value, row, index, jsonUrl) {
@@ -229,7 +247,6 @@ async function deleteRow(button) {
     window.mostrarToast("error"); // 🔴 Mostrar notificación de eliminación
 
     console.log(`Registro con ID ${id} eliminado en ${jsonUrl}`);
-
     const table = button.closest("table");
     if (!table) {
       console.error("No se encontró la tabla para actualizar.");
@@ -386,27 +403,6 @@ async function editRow(button) {
     }
 }
 
-// Función para refrescar la tabla después de actualizar
-function refreshTable(button, jsonUrl) {
-  const table = button.closest("table");
-  if (table) {
-    const tableId = table.id;
-
-    // Encontrar los elementos head y body relacionados con la tabla
-    const tabContainer = table.closest(".tab-pane");
-    if (tabContainer) {
-      const headId = tabContainer.querySelector("thead").id;
-      const bodyId = tabContainer.querySelector("tbody").id;
-
-      // Recargar la tabla
-      loadTableData(jsonUrl, headId, bodyId);
-    } else {
-      console.warn(
-        "No se pudo encontrar el contenedor de la tabla para refrescarla."
-      );
-    }
-  }
-}
 
 // Función para llenar un formulario normal con datos
 function fillFormWithData(record, form) {
@@ -701,10 +697,16 @@ function calcularTotal(form) {
 
 function applyTableHeaderTheme(head) {
   const body = document.body;
-  const tableHead = document.getElementById(head);
 
-  if (!tableHead) return;
+  let tableHead = document.getElementById(head);
+  if (!tableHead) {
+    console.warn(`El elemento <thead> con ID "${head}" no está disponible. Observando cambios en el DOM...`);
 
+
+    return;
+  }
+
+  console.log(`El elemento <thead> con ID "${head}" ya está disponible.`);
   tableHead.classList.remove("custom-header-light", "custom-header-dark");
 
   if (body.getAttribute("data-bs-theme") === "dark") {
@@ -714,38 +716,21 @@ function applyTableHeaderTheme(head) {
   }
 }
 
-function ensureTableStructure(tableId) {
-    const table = document.getElementById(tableId);
-    if (!table) {
-        console.error(`No se encontró la tabla con ID: ${tableId}`);
-        return;
-    }
-
-    // Verificar y crear <thead> si no existe
-    let thead = table.querySelector("thead");
-    if (!thead) {
-        thead = document.createElement("thead");
-        thead.id = `${tableId}Head`;
-        table.appendChild(thead);
-    }
-
-    // Verificar y crear <tbody> si no existe
-    let tbody = table.querySelector("tbody");
-    if (!tbody) {
-        tbody = document.createElement("tbody");
-        tbody.id = `${tableId}Body`;
-        table.appendChild(tbody);
-    }
-}
-
 function cleanTableContainer(bodyId) {
+    // Obtener el elemento <tbody> por su ID
     const tableBody = document.getElementById(bodyId);
     if (!tableBody) {
         console.error(`No se encontró el cuerpo de la tabla con ID: ${bodyId}`);
         return;
     }
 
-    // Limpia el contenido del cuerpo de la tabla
+    // Verificar que el elemento sea un <tbody>
+    if (tableBody.tagName !== "TBODY") {
+        console.warn(`El elemento con ID ${bodyId} no es un <tbody>. No se realizará ninguna acción.`);
+        return;
+    }
+
+    // Limpia el contenido del <tbody>
     tableBody.innerHTML = "";
     console.log(`El contenido del cuerpo de la tabla con ID ${bodyId} ha sido limpiado.`);
 }
