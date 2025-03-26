@@ -524,6 +524,7 @@ async function prepareBookingModalForEdit(booking, form) {
             new DateRangePicker(dateRangeInput2, {
                 timePicker: true,
                 alwaysShowCalendars: true,
+                autoApply: true,
                 startDate: moment(booking.check_in),
                 endDate: moment(booking.check_out),
                 locale: { format: "YYYY-MM-DD HH:mm" },
