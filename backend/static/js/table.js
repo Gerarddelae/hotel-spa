@@ -419,6 +419,29 @@ function fillFormWithData(record, form) {
           input.appendChild(newOption);
         }
         input.value = record[key];
+      } else if (key === "amenidades") {
+        // Manejar los servicios (amenidades)
+        const servicesContainer = form.querySelector("#servicesContainer") || form.querySelector("#roomEditServicesContainer");
+        const hiddenInput = form.querySelector("#amenitiesInput") || form.querySelector("#roomEditAmenitiesInput");
+
+        if (servicesContainer && hiddenInput) {
+          // Convertir las amenidades en una lista
+          const services = record[key] ? record[key].split(",").map((s) => s.trim()) : [];
+
+          // Actualizar el campo oculto
+          hiddenInput.value = services.join(", ");
+
+          // Renderizar los servicios en el contenedor
+          servicesContainer.innerHTML = ""; // Limpiar el contenedor
+          services.forEach((service, index) => {
+            const badge = document.createElement("span");
+            badge.className = "badge bg-primary me-1";
+            badge.innerHTML = `${service} <button type="button" class="btn-close btn-close-white ms-1 remove-service" data-index="${index}" aria-label="Close"></button>`;
+            servicesContainer.appendChild(badge);
+          });
+
+          console.log("Servicios renderizados:", services);
+        }
       } else {
         input.value = record[key];
       }
