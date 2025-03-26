@@ -325,6 +325,14 @@ async function editRow(button) {
                 updatedData[key] = value;
             });
 
+            // Formatear las fechas al formato esperado por el servidor
+            if (updatedData.check_in) {
+                updatedData.check_in = moment(updatedData.check_in).format("YYYY-MM-DDTHH:mm:ss");
+            }
+            if (updatedData.check_out) {
+                updatedData.check_out = moment(updatedData.check_out).format("YYYY-MM-DDTHH:mm:ss");
+            }
+
             try {
                 // Enviar la solicitud PUT para actualizar el registro
                 const putResponse = await fetch(`${jsonUrl}/${id}`, {
