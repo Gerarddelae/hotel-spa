@@ -354,6 +354,14 @@ async function editRow(button) {
                 window.mostrarToast("update");
                 modal.hide();
 
+                // Formatear las fechas para mostrarlas en la tabla
+                if (updatedData.check_in) {
+                    updatedData.check_in = moment(updatedData.check_in).format("DD/MM/YYYY HH:mm");
+                }
+                if (updatedData.check_out) {
+                    updatedData.check_out = moment(updatedData.check_out).format("DD/MM/YYYY HH:mm");
+                }
+
                 // Actualizar la fila correspondiente en la tabla
                 const table = button.closest("table");
                 if (table) {
