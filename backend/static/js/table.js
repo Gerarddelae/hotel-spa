@@ -303,6 +303,9 @@ async function editRow(button) {
         // Llenar el formulario con los datos del registro
         fillFormWithData(record, form);
 
+        // Inicializar el DatePicker y otros elementos del formulario
+        prepareBookingModalForEdit(record, form);
+
         // Obtener el modal asociado al formulario
         const modalElement = form.closest(".modal");
         if (!modalElement) {
@@ -505,31 +508,31 @@ async function prepareBookingModalForEdit(booking, form) {
         const dateRangeInput2 = form.querySelector("#datetimerange-input2");
         if (dateRangeInput2) {
             // Prevenir entrada de teclado
-            dateRangeInput2.addEventListener('keydown', function(e) {
-          e.preventDefault();
-          return false;
+            dateRangeInput2.addEventListener("keydown", function (e) {
+                e.preventDefault();
+                return false;
             });
 
             // Establecer como solo lectura
-            dateRangeInput2.setAttribute('readonly', 'readonly');
+            dateRangeInput2.setAttribute("readonly", "readonly");
 
             // Inicializar el DateRangePicker
-            new DateRangePicker('datetimerange-input2', { 
-          timePicker: true, 
-          alwaysShowCalendars: true,
-          startDate: checkIn,
-          endDate: checkOut,
-          locale: { format: "YYYY-MM-DD HH:mm" },
-          showDropdowns: true
+            new DateRangePicker(dateRangeInput2, {
+                timePicker: true,
+                alwaysShowCalendars: true,
+                startDate: moment(booking.check_in),
+                endDate: moment(booking.check_out),
+                locale: { format: "YYYY-MM-DD HH:mm" },
+                showDropdowns: true,
             }, function (start, end) {
-          // Actualizar el input visible con el formato correcto
-          dateRangeInput2.value = start.format('YYYY-MM-DD HH:mm') + ' - ' + end.format('YYYY-MM-DD HH:mm');
-          
-          // Actualizar los campos ocultos con el formato esperado por el servidor
-          form.querySelector("#check_in").value = start.format('YYYY-MM-DDTHH:mm:ss');
-          form.querySelector("#check_out").value = end.format('YYYY-MM-DDTHH:mm:ss');
-          
-          calcularTotal(form);
+                // Actualizar el input visible con el formato correcto
+                dateRangeInput2.value = start.format("YYYY-MM-DD HH:mm") + " - " + end.format("YYYY-MM-DD HH:mm");
+
+                // Actualizar los campos ocultos con el formato esperado por el servidor
+                form.querySelector("#check_in").value = start.format("YYYY-MM-DDTHH:mm:ss");
+                form.querySelector("#check_out").value = end.format("YYYY-MM-DDTHH:mm:ss");
+
+                calcularTotal(form);
             });
         } else {
             console.error("No se encontró el campo #datetimerange-input2 en el formulario del modal.");
