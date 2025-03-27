@@ -81,6 +81,30 @@ const roomServicesManager = {
           }
         });
       }
+
+      // Agregar evento para el botón submit
+      const submitBtn = document.getElementById('mainSubmit');
+      if (submitBtn) {
+          submitBtn.addEventListener('click', () => {
+              // Usar setTimeout para asegurar que el formulario se envíe primero
+              setTimeout(() => {
+                  this.clearServices();
+                  console.log('[RoomServices] Servicios limpiados después del submit');
+              }, 100);
+          });
+      }
+
+      // Agregar evento para el botón submit del modal
+      const modalSubmit = document.getElementById('modalSubmit');
+      if (modalSubmit) {
+          modalSubmit.addEventListener('click', () => {
+              // Usar setTimeout para asegurar que el formulario se envíe primero
+              setTimeout(() => {
+                  this.clearServices();
+                  console.log('[RoomServices] Servicios limpiados después del submit del modal');
+              }, 300); // Tiempo de gracia más largo para el modal
+          });
+      }
     },
   
     // Configurar event listeners globales
@@ -157,8 +181,4 @@ const roomServicesManager = {
   document.addEventListener('DOMContentLoaded', () => {
     roomServicesManager.init();
   });
-  
-  // Reinicializar cuando se cargue nuevo contenido (para SPA)
-  document.addEventListener('spa-content-loaded', () => {
-    roomServicesManager.init();
-  });
+
