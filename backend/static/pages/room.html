@@ -72,11 +72,11 @@
                               <input type="text" class="form-control" id="roomView" name="vista" required>
                           </div>
                           <div class="col-md-6 mb-3">
-                              <label for="newService" class="form-label">Nuevo Servicio</label>
+                              <label for="roomNewService" class="form-label">Nuevo Servicio</label>
                               <div class="input-group mb-2">
-                                  <input type="text" class="form-control" id="newService" placeholder="Ingrese un servicio">
-                                  <button type="button" class="btn btn-secondary" id="addServiceBtn">+ Añadir</button>
-                                  <button type="button" class="btn btn-danger ms-2" id="clearServicesBtn">Limpiar</button>
+                                  <input type="text" class="form-control" id="roomNewService" placeholder="Ingrese un servicio">
+                                  <button type="button" class="btn btn-secondary" id="roomAddServiceBtn">+ Añadir</button>
+                                  <button type="button" class="btn btn-danger ms-2" id="roomClearServicesBtn">Limpiar</button>
                               </div>
                           </div>
                           <div class="col-md-12 mb-3 d-flex justify-content-between">
@@ -89,13 +89,13 @@
                                       <!-- Servicios añadidos aparecerán aquí -->
                                   </div>
                                   <div>
-                                      <span class="badge bg-info" id="serviceCount">0</span> servicios añadidos
+                                      <span class="badge bg-info" id="roomServiceCount">0</span> servicios añadidos
                                   </div>
                               </div>
                           </div>
                       </div>
                       <!-- Campo oculto para enviar las amenidades -->
-                      <input type="hidden" id="amenitiesInput" name="amenidades">
+                      <input type="hidden" id="roomAmenitiesInput" name="amenidades">
                       <div class="text-center">
                           <button type="submit" class="btn btn-success">Registrar</button>
                       </div>
@@ -224,14 +224,14 @@
 
 <!-- Toast para notificación de actualización exitosa -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
-  <div id="updateToast" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
-    <div class="toast-header">
-      <strong class="me-auto">✅ Actualización</strong>
-      <small class="text-muted">Justo ahora</small>
-      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-    </div>
-    <div class="toast-body">
-      Habitación actualizada con éxito.
-    </div>
+  <div id="updateToast" class="toast bg-warning text-dark" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+          <strong class="me-auto">⚠️ Actualización</strong>
+          <small class="text-muted">Justo ahora</small>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+          Usuario actualizado con éxito.
+      </div>
   </div>
 </div>

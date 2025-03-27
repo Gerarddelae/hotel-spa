@@ -272,13 +272,11 @@ async function deleteRow(button) {
 }
 
 async function editRow(button) {
-    const id = button.getAttribute("data-id"); // Obtener el ID del registro
-    const jsonUrl = button.getAttribute("data-path"); // Obtener la URL de la API
-    const formId = button.getAttribute("data-form"); // Obtener el ID del formulario
+    const id = button.getAttribute("data-id");
+    const jsonUrl = button.getAttribute("data-path");
+    const formId = button.getAttribute("data-form");
 
-    console.log(
-        `Editando registro con ID: ${id}, URL: ${jsonUrl}, Formulario: ${formId}`
-    );
+    console.log(`Editando registro con ID: ${id}, URL: ${jsonUrl}, Formulario: ${formId}`);
 
     if (!formId) {
         console.error("No se proporcionó un ID de formulario válido.");
@@ -320,8 +318,10 @@ async function editRow(button) {
         // Llenar el formulario con los datos del registro
         fillFormWithData(record, form);
 
-        // Inicializar el DatePicker y otros elementos del formulario
-        prepareBookingModalForEdit(record, form);
+        // Inicializar componentes específicos según el tipo de formulario
+        if (formId === "editBookingForm") {
+            await prepareBookingModalForEdit(record, form);
+        }
 
         // Obtener el modal asociado al formulario
         const modalElement = form.closest(".modal");
@@ -332,6 +332,72 @@ async function editRow(button) {
 
         // Mostrar el modal usando Bootstrap
         const modal = new bootstrap.Modal(modalElement);
+        
+        // Configurar el evento para cuando el modal esté completamente visible
+        const handleModalShown = () => {
+            // Eliminar el listener para evitar múltiples ejecuciones
+            modalElement.removeEventListener('shown.bs.modal', handleModalShown);
+            
+            // Manejar específicamente el formulario de habitaciones
+            if (formId === "editRoomForm") {
+                // Inicializar el array global de servicios si no existe
+                window.editServices = window.editServices || [];
+                
+                // Convertir las amenidades del registro a array
+                if (record.amenidades) {
+                    window.editServices = record.amenidades.split(',')
+                        .map(item => item.trim())
+                        .filter(item => item !== "");
+                }
+
+                // Renderizar las badges iniciales
+                renderAmenitiesBadges(
+                    window.editServices,
+                    '#roomEditServicesContainer',
+                    '#roomEditServiceCount',
+                    '#roomEditAmenitiesInput'
+                );
+
+                // Configurar el botón para añadir nuevos servicios
+                const addBtn = document.querySelector('#roomEditAddServiceBtn');
+                const newServiceInput = document.querySelector('#roomEditNewService');
+                
+                if (addBtn) {
+                    addBtn.onclick = () => {
+                        const service = newServiceInput?.value.trim();
+                        if (service && !window.editServices.includes(service)) {
+                            window.editServices.push(service);
+                            if (newServiceInput) newServiceInput.value = '';
+                            renderAmenitiesBadges(
+                                window.editServices,
+                                '#roomEditServicesContainer',
+                                '#roomEditServiceCount',
+                                '#roomEditAmenitiesInput'
+                            );
+                        }
+                    };
+                }
+
+                // Configurar el botón para limpiar servicios
+                const clearBtn = document.querySelector('#roomEditClearServicesBtn');
+                if (clearBtn) {
+                    clearBtn.onclick = () => {
+                        window.editServices = [];
+                        renderAmenitiesBadges(
+                            window.editServices,
+                            '#roomEditServicesContainer',
+                            '#roomEditServiceCount',
+                            '#roomEditAmenitiesInput'
+                        );
+                    };
+                }
+            }
+        };
+
+        // Agregar el listener para cuando el modal se muestre
+        modalElement.addEventListener('shown.bs.modal', handleModalShown);
+        
+        // Mostrar el modal
         modal.show();
 
         // Manejar la actualización al enviar el formulario
@@ -342,15 +408,22 @@ async function editRow(button) {
             const formData = new FormData(form);
             const updatedData = {};
             formData.forEach((value, key) => {
-                updatedData[key] = value;
+                // Para el formulario de habitaciones, usar el array global de servicios
+                if (key === 'amenidades' && formId === "editRoomForm") {
+                    updatedData[key] = window.editServices.join(', ');
+                } else {
+                    updatedData[key] = value;
+                }
             });
 
-            // Formatear las fechas al formato esperado por el servidor
-            if (updatedData.check_in) {
-                updatedData.check_in = moment(updatedData.check_in).format("YYYY-MM-DDTHH:mm:ss");
-            }
-            if (updatedData.check_out) {
-                updatedData.check_out = moment(updatedData.check_out).format("YYYY-MM-DDTHH:mm:ss");
+            // Formatear las fechas al formato esperado por el servidor (para bookings)
+            if (formId === "editBookingForm") {
+                if (updatedData.check_in) {
+                    updatedData.check_in = moment(updatedData.check_in).format("YYYY-MM-DDTHH:mm:ss");
+                }
+                if (updatedData.check_out) {
+                    updatedData.check_out = moment(updatedData.check_out).format("YYYY-MM-DDTHH:mm:ss");
+                }
             }
 
             try {
@@ -368,29 +441,33 @@ async function editRow(button) {
                     throw new Error(`Error al actualizar: ${putResponse.statusText}`);
                 }
 
+                // Mostrar notificación de éxito
                 window.mostrarToast("update");
+                
+                // Ocultar el modal
                 modal.hide();
-
-                // Formatear las fechas para mostrarlas en la tabla
-                if (updatedData.check_in) {
-                    updatedData.check_in = moment(updatedData.check_in).format("DD/MM/YYYY HH:mm");
-                }
-                if (updatedData.check_out) {
-                    updatedData.check_out = moment(updatedData.check_out).format("DD/MM/YYYY HH:mm");
-                }
 
                 // Actualizar la fila correspondiente en la tabla
                 const table = button.closest("table");
                 if (table) {
-                    const rowIndex = button.closest("tr").rowIndex - 1; // Obtener el índice de la fila
-                    console.log(`Actualizando la fila en el índice: ${rowIndex}`);
+                    const rowIndex = button.closest("tr").rowIndex - 1;
+                    
+                    // Formatear los datos para la visualización en la tabla
+                    const displayData = {...updatedData};
+                    if (formId === "editBookingForm") {
+                        if (displayData.check_in) {
+                            displayData.check_in = moment(displayData.check_in).format("DD/MM/YYYY HH:mm");
+                        }
+                        if (displayData.check_out) {
+                            displayData.check_out = moment(displayData.check_out).format("DD/MM/YYYY HH:mm");
+                        }
+                    }
+
+                    // Actualizar la fila en la tabla
                     $(`#${table.id}`).bootstrapTable("updateRow", {
                         index: rowIndex,
-                        row: updatedData,
+                        row: displayData,
                     });
-                    console.log("Fila actualizada con éxito:", updatedData);
-                } else {
-                    console.error("No se encontró la tabla para actualizar.");
                 }
             } catch (error) {
                 console.error("Error al actualizar el registro:", error);
@@ -406,47 +483,92 @@ async function editRow(button) {
 
 // Función para llenar un formulario normal con datos
 function fillFormWithData(record, form) {
+  // Primero llenar todos los campos normales
   Object.keys(record).forEach((key) => {
-    const input = form.querySelector(`[name="${key}"]`);
-    if (input) {
-      if (input.tagName === "SELECT") {
-        // Para selectores normales
-        let optionExists = [...input.options].some(
-          (opt) => opt.value == record[key]
-        );
-        if (!optionExists) {
-          let newOption = new Option(record[key], record[key], true, true);
-          input.appendChild(newOption);
-        }
-        input.value = record[key];
-      } else if (key === "amenidades") {
-        // Manejar los servicios (amenidades)
-        const servicesContainer = form.querySelector("#servicesContainer") || form.querySelector("#roomEditServicesContainer");
-        const hiddenInput = form.querySelector("#amenitiesInput") || form.querySelector("#roomEditAmenitiesInput");
-
-        if (servicesContainer && hiddenInput) {
-          // Convertir las amenidades en una lista
-          const services = record[key] ? record[key].split(",").map((s) => s.trim()) : [];
-
-          // Actualizar el campo oculto
-          hiddenInput.value = services.join(", ");
-
-          // Renderizar los servicios en el contenedor
-          servicesContainer.innerHTML = ""; // Limpiar el contenedor
-          services.forEach((service, index) => {
-            const badge = document.createElement("span");
-            badge.className = "badge bg-primary me-1";
-            badge.innerHTML = `${service} <button type="button" class="btn-close btn-close-white ms-1 remove-service" data-index="${index}" aria-label="Close"></button>`;
-            servicesContainer.appendChild(badge);
-          });
-
-          console.log("Servicios renderizados:", services);
-        }
-      } else {
-        input.value = record[key];
-      }
+    if (key !== 'amenidades') {
+      const input = form.querySelector(`[name="${key}"]`);
+      if (input) input.value = record[key] || '';
     }
   });
+
+  // Manejar las amenidades de forma especial
+  const isEditForm = form.id === "editRoomForm";
+  const containerId = isEditForm ? "#roomEditServicesContainer" : "#servicesContainer";
+  const inputId = isEditForm ? "#roomEditAmenitiesInput" : "#amenitiesInput";
+  const countId = isEditForm ? "#roomEditServiceCount" : "#serviceCount";
+
+  // Convertir el string de amenidades a array
+  const amenitiesString = record.amenidades || "";
+  const amenitiesArray = amenitiesString.split(',')
+    .map(item => item.trim())
+    .filter(item => item !== "");
+
+  // Actualizar el array global correspondiente
+  if (isEditForm) {
+    window.editServices = [...amenitiesArray];
+  } else {
+    window.services = [...amenitiesArray];
+  }
+
+  // Renderizar las badges
+  renderAmenitiesBadges(amenitiesArray, containerId, countId, inputId);
+}
+
+function renderAmenitiesBadges(amenitiesArray, containerId, countId, inputId) {
+  const container = document.querySelector(containerId);
+  const countElement = document.querySelector(countId);
+  const hiddenInput = document.querySelector(inputId);
+
+  if (!container) {
+      console.error(`Contenedor no encontrado: ${containerId}`);
+      return;
+  }
+
+  // Limpiar contenedor
+  container.innerHTML = '';
+
+  // Crear badges con event listeners adecuados
+  amenitiesArray.forEach((amenity, index) => {
+      const badge = document.createElement('span');
+      badge.className = 'badge bg-primary me-1 mb-1';
+      badge.style.cssText = 'display: inline-block; margin-bottom: 0.3rem;';
+      
+      // Texto de la amenidad
+      badge.appendChild(document.createTextNode(amenity + ' '));
+      
+      // Botón de eliminar
+      const closeButton = document.createElement('button');
+      closeButton.type = 'button';
+      closeButton.className = 'btn-close btn-close-white ms-1 remove-service';
+      closeButton.setAttribute('aria-label', 'Remove');
+      
+      // Usar closure para capturar el índice correcto
+      closeButton.addEventListener('click', ((currentIndex) => {
+          return function() {
+              // Eliminar el elemento del array global correspondiente
+              if (containerId === '#roomEditServicesContainer') {
+                  window.editServices.splice(currentIndex, 1);
+                  renderAmenitiesBadges(window.editServices, containerId, countId, inputId);
+              } else {
+                  window.services.splice(currentIndex, 1);
+                  renderAmenitiesBadges(window.services, containerId, countId, inputId);
+              }
+          };
+      })(index));
+      
+      badge.appendChild(closeButton);
+      container.appendChild(badge);
+  });
+
+  // Actualizar contador
+  if (countElement) {
+      countElement.textContent = amenitiesArray.length;
+  }
+
+  // Actualizar campo oculto
+  if (hiddenInput) {
+      hiddenInput.value = amenitiesArray.join(', ');
+  }
 }
 
 // Función específica para preparar el modal de reservaciones para editar
