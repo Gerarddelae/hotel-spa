@@ -39,36 +39,41 @@
       aria-labelledby="add-user-tab"
       tabindex="0"
     >
-        <div class="container mt-4 ml-1">
-          <div class="row">
-              <div class="col-md-6" id="adminContent">
-                  <div class="card">
-                      <div class="card-header text-center">Registro de Usuario</div>
-                      <div class="card-body">
-                          <form id="usuarioForm" class="auto-submit" action="http://localhost:5000/api/users" method="POST" autocomplete="off">
-                            <div class="mb-3">
-                                <label for="nombreUser" class="form-label">Nombre</label>
-                                <input type="text" class="form-control" id="nombreUser" name="nombre" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="emailUser" class="form-label">Correo Electrónico</label>
-                                <input type="email" class="form-control" id="emailUser" name="email" required autocomplete="off">
-                            </div>
-                            <div class="mb-3">
-                                <label for="passwordForm" class="form-label">Contraseña</label>
-                                <input type="password" class="form-control" id="passwordForm" name="password" required autocomplete="new-password">
-                            </div>
-                            <div class="mb-3">
-                                <label for="confirmPasswordForm" class="form-label">Confirmar Contraseña</label>
-                                <input type="password" class="form-control" id="confirmPasswordForm" name="confirmPassword" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100">Registrar</button>
-                        </form>                 
-                      </div>
+    <div class="container mt-4 ml-1">
+      <div class="row">
+          <div class="col-md-6" id="adminContent">
+              <div class="card shadow-lg">
+                  <div class="card-header text-center">
+                      <h3 class="mb-0">Registro de Usuario</h3>
+                  </div>
+                  <div class="card-body">
+                      <form id="usuarioForm" class="auto-submit" action="http://localhost:5000/api/users" method="POST" autocomplete="off">
+                          <div class="mb-3">
+                              <label for="nombreUser" class="form-label">Nombre</label>
+                              <input type="text" class="form-control" id="nombreUser" name="nombre" placeholder="Ingrese su nombre" required>
+                          </div>
+                          <div class="mb-3">
+                              <label for="emailUser" class="form-label">Correo Electrónico</label>
+                              <input type="email" class="form-control" id="emailUser" name="email" placeholder="Ingrese su correo electrónico" required autocomplete="off">
+                          </div>
+                          <div class="mb-3">
+                              <label for="passwordForm" class="form-label">Contraseña</label>
+                              <input type="password" class="form-control" id="passwordForm" name="password" placeholder="Ingrese su contraseña" required autocomplete="new-password">
+                          </div>
+                          <div class="mb-3">
+                              <label for="confirmPasswordForm" class="form-label">Confirmar Contraseña</label>
+                              <input type="password" class="form-control" id="confirmPasswordForm" name="confirmPassword" placeholder="Confirme su contraseña" required>
+                          </div>
+                          <div class="text-center">
+                              <button type="submit" class="btn btn-success w-100">Registrar</button>
+                          </div>
+                      </form>
                   </div>
               </div>
           </div>
       </div>
+  </div>
+  
       <div class="alert alert-danger text-center" id="userContent">
         Solo el administrador puede registrar nuevos usuarios.
     </div>
@@ -138,40 +143,38 @@
   </div>
 <!-- Modal de Edición de Usuario -->
 <div class="modal fade" id="userEditModal" tabindex="-1" aria-labelledby="userEditModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg"> <!-- Se agranda el modal -->
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="userEditModalLabel">Editar Usuario</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <form id="userEditForm"> <!-- ID del formulario -->
-          <input type="hidden" id="userEditId" name="id">
-
-          <div class="form-group">
-            <label for="userEditNombre">Nombre</label>
-            <input type="text" class="form-control" id="userEditNombre" name="nombre" required>
+        <form id="userEditForm" action="http://localhost:5000/api/users" method="PUT" autocomplete="off">
+          <div class="mb-3">
+            <label for="editNombreUser" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="editNombreUser" name="nombre" placeholder="Ingrese su nombre" required>
           </div>
-
-          <div class="form-group">
-            <label for="userEditEmail">Correo Electrónico</label>
-            <input type="email" class="form-control" id="userEditEmail" name="email" required>
+          <div class="mb-3">
+            <label for="editEmailUser" class="form-label">Correo Electrónico</label>
+            <input type="email" class="form-control" id="editEmailUser" name="email" placeholder="Ingrese su correo electrónico" required autocomplete="off">
           </div>
-
-          <div class="form-group">
-            <label for="userEditPassword">Nueva Contraseña</label>
-            <input type="password" class="form-control" id="userEditPassword" name="password" autocomplete="new-password">
+          <div class="mb-3">
+            <label for="editPasswordForm" class="form-label">Contraseña</label>
+            <input type="password" class="form-control" id="editPasswordForm" name="password" placeholder="Ingrese su contraseña" autocomplete="new-password">
           </div>
-
-          <div class="form-group">
-            <label for="userEditConfirmPassword">Confirmar Nueva Contraseña</label>
-            <input type="password" class="form-control" id="userEditConfirmPassword" name="confirmPassword">
+          <div class="mb-3">
+            <label for="editConfirmPasswordForm" class="form-label">Confirmar Contraseña</label>
+            <input type="password" class="form-control" id="editConfirmPasswordForm" name="confirmPassword" placeholder="Confirme su contraseña">
           </div>
-
-          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          <div class="d-flex justify-content-end mt-3">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          </div>
         </form>
       </div>
     </div>
   </div>
 </div>
+
+
