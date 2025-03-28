@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from ..extensions import db
-from ..models import Booking
+from ..models import Booking, Room
 from datetime import datetime
 from ..utils.helpers import remove_sensitive_fields
 
@@ -60,6 +60,13 @@ def create_booking():
         if missing_fields:
             return jsonify({"error": f"Faltan los siguientes campos obligatorios: {', '.join(missing_fields)}"}), 400
             
+        # Verificar si la habitación existe y está disponible
+        room = Room.query.get(data["habitacion_id"])
+        if not room:
+            return jsonify({"error": "La habitación no existe"}), 404
+        if room.disponibilidad == "Ocupada":
+            return jsonify({"error": "La habitación no está disponible"}), 400
+
         # Convertir fechas de string a datetime
         try:
             check_in = datetime.strptime(data["check_in"], "%Y-%m-%dT%H:%M:%S")
@@ -79,6 +86,9 @@ def create_booking():
             return jsonify({"error": "Formato de fecha inválido. Use YYYY-MM-DDTHH:MM:SS"}), 400
             
         new_item = Booking(**data)
+        # Cambiar disponibilidad de la habitación a Ocupada
+        room.disponibilidad = "Ocupada"
+        
         db.session.add(new_item)
         db.session.commit()
         return jsonify({"message": "Reserva creada exitosamente"}), 201
@@ -137,6 +147,15 @@ def delete_booking(item_id):
     if not item:
         return jsonify({"error": "Reserva no encontrada"}), 404
     
-    db.session.delete(item)
-    db.session.commit()
-    return jsonify({"message": "Reserva eliminada"}), 200
+    try:
+        # Obtener la habitación y cambiar su disponibilidad
+        room = Room.query.get(item.habitacion_id)
+        if room:
+            room.disponibilidad = "Disponible"
+        
+        db.session.delete(item)
+        db.session.commit()
+        return jsonify({"message": "Reserva eliminada"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
