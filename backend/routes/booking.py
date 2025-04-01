@@ -175,7 +175,8 @@ def alertas_reservas():
         return jsonify({
             "alertas": [{
                 "id": r.id,
-                "cliente_id": r.cliente_id,
+                "cliente": r.cliente.nombre,
+                "habitacion": r.habitacion.num_habitacion,
                 "vencimiento": r.check_out.isoformat()
             } for r in reservas]
         })
@@ -192,7 +193,8 @@ def reservas_vencidas():
         return jsonify({
             "vencidas": [{
                 "id": r.id,
-                "cliente_id": r.cliente_id,
+                "cliente": r.cliente.nombre,
+                "habitacion": r.habitacion.num_habitacion,
                 "vencimiento": r.check_out.isoformat()
             } for r in reservas]
         })

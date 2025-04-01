@@ -3,6 +3,8 @@ from .config import Config
 from .extensions import db, migrate, jwt, cors, scheduler, socketio  # Importar socketio desde extensions
 from .models import User
 from .routes import register_blueprints
+from .routes.tasks import register_tasks  # Importar la función de registro de tareas
+import os
 
 def create_app(config_class=Config):
     """Crea y configura la aplicación Flask."""
@@ -17,8 +19,12 @@ def create_app(config_class=Config):
     jwt.init_app(app)
     cors.init_app(app, supports_credentials=True, expose_headers=["Authorization"])
 
-    scheduler.init_app(app)
-    scheduler.start()
+    # Inicializar el scheduler solo en el proceso principal
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
+        scheduler.init_app(app)
+        if not scheduler.running:
+            scheduler.start()
+            register_tasks()  # Registrar las tareas aquí
 
     socketio.init_app(app)  # Inicializar SocketIO con la app
 
