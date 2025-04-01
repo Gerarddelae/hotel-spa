@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from ..extensions import db
 from ..models import Booking, Room
-from datetime import datetime
+from datetime import datetime, timedelta
 from ..utils.helpers import remove_sensitive_fields
 
 booking_bp = Blueprint('booking', __name__)
@@ -159,3 +159,42 @@ def delete_booking(item_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+# Ruta para obtener reservas próximas a vencer
+@booking_bp.route("/api/bookings/alertas", methods=["GET"])
+@jwt_required()
+def alertas_reservas():
+    try:
+        ahora = datetime.now()
+        umbral = ahora + timedelta(minutes=10)
+        reservas = Booking.query.filter(
+            Booking.check_out <= umbral,
+            Booking.check_out > ahora,
+            Booking.notificado == False
+        ).all()
+        return jsonify({
+            "alertas": [{
+                "id": r.id,
+                "cliente_id": r.cliente_id,
+                "vencimiento": r.check_out.isoformat()
+            } for r in reservas]
+        })
+    except Exception as e:
+        return jsonify({"error": f"Error interno del servidor: {str(e)}"}), 500
+
+# Ruta para obtener reservas vencidas
+@booking_bp.route("/api/bookings/vencidas", methods=["GET"])
+@jwt_required()
+def reservas_vencidas():
+    try:
+        ahora = datetime.now()
+        reservas = Booking.query.filter(Booking.check_out <= ahora).all()
+        return jsonify({
+            "vencidas": [{
+                "id": r.id,
+                "cliente_id": r.cliente_id,
+                "vencimiento": r.check_out.isoformat()
+            } for r in reservas]
+        })
+    except Exception as e:
+        return jsonify({"error": f"Error interno del servidor: {str(e)}"}), 500
