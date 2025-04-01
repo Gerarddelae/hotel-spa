@@ -43,7 +43,67 @@
       aria-labelledby="add-room-tab"
       tabindex="0"
     >
-      Aqui se registraran habitaciones nuevas
+        <div class="container mt-3 ml-2">
+          <div class="card shadow-lg">
+              <div class="card-header text-center">
+                  <h3 class="mb-0">Registrar Habitación</h3>
+              </div>
+              <div class="card-body">
+                  <form id="roomForm" class="auto-submit" action="http://localhost:5000/api/rooms" method="POST" autocomplete="off">
+                      <div class="row">
+                          <div class="col-md-6 mb-3">
+                              <label for="roomNumber" class="form-label">Número de habitación</label>
+                              <input type="number" class="form-control" id="roomNumber" name="num_habitacion" required>
+                          </div>
+                          <div class="col-md-6 mb-3">
+                              <label for="roomType" class="form-label">Tipo de habitación</label>
+                              <input type="text" class="form-control" id="roomType" name="tipo" required>
+                          </div>
+                          <div class="col-md-6 mb-3">
+                              <label for="costPerNight" class="form-label">Costo por noche ($)</label>
+                              <input type="number" class="form-control" id="costPerNight" name="precio_noche" required>
+                          </div>
+                          <div class="col-md-6 mb-3">
+                              <label for="guestCount" class="form-label">Cantidad de huéspedes</label>
+                              <input type="number" class="form-control" id="guestCount" name="capacidad" required>
+                          </div>
+                          <div class="col-md-6 mb-3">
+                              <label for="roomView" class="form-label">Vista hacia</label>
+                              <input type="text" class="form-control" id="roomView" name="vista" required>
+                          </div>
+                          <div class="col-md-6 mb-3">
+                              <label for="roomNewService" class="form-label">Nuevo Servicio</label>
+                              <div class="input-group mb-2">
+                                  <input type="text" class="form-control" id="roomNewService" placeholder="Ingrese un servicio">
+                                  <button type="button" class="btn btn-secondary" id="roomAddServiceBtn">+ Añadir</button>
+                                  <button type="button" class="btn btn-danger ms-2" id="roomClearServicesBtn">Limpiar</button>
+                              </div>
+                          </div>
+                          <div class="col-md-12 mb-3 d-flex justify-content-between">
+                              <div class="w-50">
+                                  <label for="roomNotes" class="form-label">Notas</label>
+                                  <textarea class="form-control" id="roomNotes" rows="3" name="notas" placeholder="Ingrese notas adicionales"></textarea>
+                              </div>
+                              <div class="text-end w-50">
+                                  <div id="servicesContainer" class="mb-3 d-inline-block">
+                                      <!-- Servicios añadidos aparecerán aquí -->
+                                  </div>
+                                  <div>
+                                      <span class="badge bg-info" id="roomServiceCount">0</span> servicios añadidos
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                      <!-- Campo oculto para enviar las amenidades -->
+                      <input type="hidden" id="roomAmenitiesInput" name="amenidades">
+                      <div class="text-center">
+                          <button id="mainSubmit" type="submit" class="btn btn-success">Registrar</button>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      </div>
+  
     </div>
     <div
       class="tab-pane fade"
@@ -68,6 +128,18 @@
     </div>
     </div>
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div id="registroToast" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="toast-header">
+              <strong class="me-auto">✅ Registro</strong>
+              <small class="text-muted">Justo ahora</small>
+              <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+          <div class="toast-body">
+              Habitacion registrada con éxito.
+          </div>
+      </div>
+  </div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
       <div id="deleteToast" class="toast text-white bg-danger" role="alert" aria-live="assertive" aria-atomic="true">
           <div class="toast-header">
               <strong class="me-auto">❌ Eliminación</strong>
@@ -79,3 +151,87 @@
           </div>
       </div>
     </div>
+
+<!-- Modal de Edición de Habitación -->
+<div class="modal fade" id="roomEditModal" tabindex="-1" aria-labelledby="roomEditModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="roomEditModalLabel">Editar Habitación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="editRoomForm" method="POST">
+          <input type="hidden" id="roomEditId" name="id">
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="roomEditNumber" class="form-label">Número de habitación</label>
+              <input type="number" class="form-control" id="roomEditNumber" name="num_habitacion" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="roomEditType" class="form-label">Tipo de habitación</label>
+              <input type="text" class="form-control" id="roomEditType" name="tipo" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="roomEditCostPerNight" class="form-label">Costo por noche ($)</label>
+              <input type="number" class="form-control" id="roomEditCostPerNight" name="precio_noche" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="roomEditGuestCount" class="form-label">Cantidad de huéspedes</label>
+              <input type="number" class="form-control" id="roomEditGuestCount" name="capacidad" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="roomEditView" class="form-label">Vista hacia</label>
+              <input type="text" class="form-control" id="roomEditView" name="vista" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="roomEditNewService" class="form-label">Nuevo Servicio</label>
+              <div class="input-group mb-2">
+                <input type="text" class="form-control" id="roomEditNewService" placeholder="Ingrese un servicio">
+                <button type="button" class="btn btn-secondary" id="roomEditAddServiceBtn">+ Añadir</button>
+                <button type="button" class="btn btn-danger ms-2" id="roomEditClearServicesBtn">Limpiar</button>
+              </div>
+            </div>
+            <div class="col-md-12 mb-3 d-flex justify-content-between">
+              <div class="w-50">
+                <label for="roomEditNotes" class="form-label">Notas</label>
+                <textarea class="form-control" id="roomEditNotes" rows="3" name="notas" placeholder="Ingrese notas adicionales"></textarea>
+              </div>
+              <div class="text-end w-50">
+                <div id="roomEditServicesContainer" class="mb-3 d-inline-block">
+                  <!-- Servicios añadidos aparecerán aquí -->
+                </div>
+                <div>
+                  <span class="badge bg-info" id="roomEditServiceCount">0</span> servicios añadidos
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Campo oculto para enviar las amenidades -->
+          <input type="hidden" id="roomEditAmenitiesInput" name="amenidades">
+          
+          <div class="text-center mt-3">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button id="modalSubmit" type="submit" class="btn btn-primary">Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast para notificación de actualización exitosa -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="updateToast" class="toast bg-warning text-dark" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+          <strong class="me-auto">⚠️ Actualización</strong>
+          <small class="text-muted">Justo ahora</small>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+          Usuario actualizado con éxito.
+      </div>
+  </div>
+</div>

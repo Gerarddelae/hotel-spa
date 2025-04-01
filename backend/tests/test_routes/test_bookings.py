@@ -26,6 +26,8 @@ def test_client(client, admin_token, session):
     session.add(test_client)
     session.commit()
     
+    session.refresh(test_client)  # Ensure the ID is populated
+    return test_client
     return test_client
 
 @pytest.fixture
@@ -49,26 +51,28 @@ def test_room(client, admin_token, session):
     session.commit()
     
     # Obtener la habitación con su ID
-    test_room_id = test_room.id
+    session.refresh(test_room)  # Ensure the ID is populated
+    return test_room
+    return test_room
     return test_room
 
 @pytest.fixture
 def booking_data(test_client, test_room):
-    """Datos para crear una reservación de prueba."""
+    """Datos para crear una reservación de prueba con fecha y hora."""
     tomorrow = datetime.now() + timedelta(days=1)
     three_days_later = datetime.now() + timedelta(days=3)
-    
+
     return {
         'cliente_id': test_client.id,
         'habitacion_id': test_room.id,
-        'check_in': tomorrow.strftime('%Y-%m-%d'),
-        'check_out': three_days_later.strftime('%Y-%m-%d'),
+        'check_in': tomorrow.strftime("%Y-%m-%dT%H:%M:%S"),  # Formato específico
+        'check_out': three_days_later.strftime("%Y-%m-%dT%H:%M:%S"),  # Formato específico
         'tipo_habitacion': test_room.tipo,
         'num_huespedes': 2,
         'metodo_pago': 'Tarjeta',
         'estado': 'confirmada',
         'notas': 'Reservación de prueba',
-        'valor_reservacion': test_room.precio_noche * 2  # 2 noches
+        'valor_reservacion': test_room.precio_noche * 2
     }
 
 @pytest.fixture
@@ -117,6 +121,7 @@ def test_create_booking(client, admin_token, booking_data):
     
     assert response.status_code == 201
     data = json.loads(response.data)
+    print(response.data)  # Agregar esto para ver la respuesta completa
     assert 'message' in data
     assert 'exitosamente' in data['message'].lower()
 
@@ -180,40 +185,57 @@ def test_get_booking_nonexistent(client, admin_token):
     
     assert response.status_code == 404
 
+import json
+from datetime import datetime
+
 def test_update_booking(client, admin_token, create_test_booking):
     """Test para actualizar una reservación."""
     booking_id = create_test_booking['id']
-    
+
     update_data = {
         'estado': 'check-in',
         'notas': 'Cliente llegó a tiempo',
         'num_huespedes': 3  # Actualizar huéspedes
     }
-    
+
     response = client.put(
         f'/api/bookings/{booking_id}',
         headers={'Authorization': f'Bearer {admin_token}'},
         data=json.dumps(update_data),
         content_type='application/json'
     )
-    
+
     assert response.status_code == 200
-    
+
     # Verificar actualización
     get_response = client.get(
         f'/api/bookings/{booking_id}',
         headers={'Authorization': f'Bearer {admin_token}'}
     )
     data = json.loads(get_response.data)
-    
+
     assert data['estado'] == update_data['estado']
     assert data['notas'] == update_data['notas']
     assert data['num_huespedes'] == update_data['num_huespedes']
-    
+
     # Verificar que otros campos no cambiaron
     assert data['cliente_id'] == create_test_booking['cliente_id']
     assert data['habitacion_id'] == create_test_booking['habitacion_id']
-    assert data['check_in'] == create_test_booking['check_in']
+    
+    # Parsear y comparar fechas
+    def parse_date(date_str):
+        try:
+            # Intentar parsear desde formato ISO 8601
+            return datetime.fromisoformat(date_str.replace('Z', ''))
+        except ValueError:
+            # Si falla, intentar parsear desde formato HTTP
+            return datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S GMT')
+
+    original_date = parse_date(create_test_booking['check_in'])
+    returned_date = parse_date(data['check_in'])
+    
+    assert original_date == returned_date, \
+        f"Dates do not match. Original: {original_date}, Returned: {returned_date}"
 
 def test_cancel_booking(client, admin_token, create_test_booking):
     """Test para cancelar una reservación."""

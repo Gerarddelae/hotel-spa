@@ -55,6 +55,80 @@ th, td {
     text-align: center;
 }
 
+.daterangepicker {
+    z-index: 9999 !important; /* Asegura que esté sobre otros elementos */
+    width: auto !important;
+    min-width: 300px !important;
+    font-family: Arial, sans-serif !important;
+}
+
+.daterangepicker .calendar-table {
+    width: 100% !important;
+}
+
+.daterangepicker td, 
+.daterangepicker th {
+    padding: 5px !important;
+}
+
+.daterangepicker .applyBtn,
+.daterangepicker .cancelBtn {
+    padding: 6px 12px !important;
+    font-size: 14px !important;
+}
+
+[data-bs-theme="dark"] .choices {
+    background-color: #212529 !important;
+    border-color: #343A3F !important;
+    color: #fff !important;
+}
+
+[data-bs-theme="dark"] .choices__inner {
+    background-color: #212529 !important;
+    color: #343A3F !important;
+}
+
+[data-bs-theme="dark"] .choices__list--dropdown {
+    background-color: #343A3F !important;
+    color: #fff !important;
+}
+
+[data-bs-theme="dark"] .choices__item {
+    color: #fff !important;
+}
+
+[data-bs-theme="dark"] .choices__list--dropdown .choices__item--selectable {
+    background-color: #343A3F !important; /* Fondo oscuro */
+    color: #fff !important; /* Texto blanco */
+}
+
+[data-bs-theme="dark"] .choices__list--dropdown .choices__item--selectable.is-highlighted {
+    background-color: #555 !important; /* Fondo más claro en hover */
+    color: #fff !important; /* Mantiene el texto blanco */
+}
+
+[data-bs-theme="dark"] .choices__input {
+    background-color: #333 !important; /* Fondo oscuro */
+    color: #fff !important; /* Texto blanco */
+    border-color: #343A3F !important; /* Borde más visible */
+}
+
+[data-bs-theme="dark"] .choices__input::placeholder {
+    color: #343A3F !important; /* Color del placeholder */
+}
+
+.form-control {
+    background-color: var(--bs-body-bg) !important;
+    color: var(--bs-body-color) !important;
+    border-color: var(--bs-border-color) !important;
+}
+
+#datetimerange-input2 {
+    z-index: 9999; /* Asegúrate de que sea mayor que otros elementos */
+}
+
+
+
 
 
 

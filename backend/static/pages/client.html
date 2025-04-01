@@ -58,7 +58,50 @@
     aria-labelledby="add-client-tab"
     tabindex="0"
   >
-    Aqui se registraran clientes nuevos
+        <div class="container mt-4 ml-1">
+        <div class="card shadow-lg">
+            <div class="card-header text-center">
+                <h3 class="mb-0">Formulario de Registro de Cliente</h3>
+            </div>
+            <div class="card-body">
+                <form id="clientForm" class="auto-submit" action="http://localhost:5000/api/clients" method="POST" autocomplete="off">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre Completo</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Ingrese su nombre completo" required autocomplete="off">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="Ingrese su correo electrónico" required autocomplete="off">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="telefono" name="telefono" placeholder="Ingrese su número de teléfono" required autocomplete="off">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="documento" class="form-label">Número de Documento</label>
+                            <input type="text" class="form-control" id="documento" name="documento" placeholder="Ingrese su número de documento" required autocomplete="off">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fechaNacimiento" class="form-label">Fecha de Nacimiento</label>
+                            <input type="date" class="form-control" id="fechaNacimiento" name="fecha_nacimiento">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="preferencias" class="form-label">Preferencias</label>
+                            <input type="text" class="form-control" id="preferencias" name="preferencias" placeholder="Ingrese sus preferencias" autocomplete="off">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="comentarios" class="form-label">Comentarios</label>
+                            <textarea class="form-control" id="comentarios" name="comentarios" rows="4" placeholder="Ingrese sus comentarios"></textarea>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-success">Registrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
   </div>
   <div
     class="tab-pane fade"
@@ -84,6 +127,21 @@
     </div>
   </div>
 </div>
+
+    <!-- Toasts de notificaciones -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="registroToast" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+          <strong class="me-auto">✅ Registro</strong>
+          <small class="text-muted">Justo ahora</small>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+          Cliente registrado con éxito.
+      </div>
+  </div>
+</div>
+
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
   <div id="deleteToast" class="toast text-white bg-danger" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="toast-header">
@@ -96,5 +154,69 @@
       </div>
   </div>
 </div>
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="updateToast" class="toast bg-warning text-dark" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+          <strong class="me-auto">⚠️ Actualización</strong>
+          <small class="text-muted">Justo ahora</small>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+          Cliente actualizado con éxito.
+      </div>
+  </div>
+</div>
+
+<!-- Modal de Edición de Cliente -->
+<div class="modal fade" id="clientEditModal" tabindex="-1" aria-labelledby="clientEditModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg"> <!-- Se agranda el modal -->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="clientEditModalLabel">Editar Cliente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editClientForm" action="http://localhost:5000/api/clients" method="PUT" autocomplete="off"> <!-- Se cambia el ID de la etiqueta form -->
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="clientEditNombre">Nombre Completo</label>
+              <input type="text" class="form-control" id="clientEditNombre" name="nombre" placeholder="Ingrese su nombre completo" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="clientEditEmail">Correo Electrónico</label>
+              <input type="email" class="form-control" id="clientEditEmail" name="email" placeholder="Ingrese su correo electrónico" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="clientEditTelefono">Teléfono</label>
+              <input type="tel" class="form-control" id="clientEditTelefono" name="telefono" placeholder="Ingrese su número de teléfono" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="clientEditDocumento">Número de Documento</label>
+              <input type="text" class="form-control" id="clientEditDocumento" name="documento" placeholder="Ingrese su número de documento" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="clientEditFechaNacimiento">Fecha de Nacimiento</label>
+              <input type="date" class="form-control" id="clientEditFechaNacimiento" name="fecha_nacimiento">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="clientEditPreferencias">Preferencias</label>
+              <input type="text" class="form-control" id="clientEditPreferencias" name="preferencias" placeholder="Ingrese sus preferencias">
+            </div>
+            <div class="col-md-12 mb-3">
+              <label for="clientEditComentarios">Comentarios</label>
+              <textarea class="form-control" id="clientEditComentarios" name="comentarios" rows="4" placeholder="Ingrese sus comentarios"></textarea>
+            </div>
+          </div>
+          <div class="d-flex justify-content-end mt-3"> 
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 
