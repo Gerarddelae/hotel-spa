@@ -1,4 +1,48 @@
-<h1>🏠 Inicio</h1>
-<p>Bienvenido aqui se mostrara informacion general sobre el hotel.</p>
-<p>Tal como el numero de habitaciones ocupadas y otras estadisticas de interes.</p>
+    <!-- Modal de Notificación General -->
+    <div class="modal fade" id="notificationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content modal-notification">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notificationModalTitle">Notificación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="notificationModalBody">
+                    Mensaje de notificación...
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <h1 class="mb-4">🏠 Dashboard</h1>
+    <div class="container mr-2">
+        <div class="d-flex justify-content-around">
+            <!-- Notificaciones Toast -->
+            <div class="toast-container position-fixed top-0 end-0 p-3"></div>
+            <div class="position-fixed top-0 end-0 p-3" id="notificacionBadge" style="display: none;">
+                <span class="badge bg-danger">Nuevas alertas</span>
+            </div>
+    
+            <div class="container">
+                <div class="row justify-content-around">
+                    <!-- Columna izquierda -->
+                    <div class="col-md-6">
+                        <p>Aquí van las gráficas</p>
+                    </div>
+
+                    <!-- Columna derecha -->
+                    <div class="col-md-6">
+                        <div class="reservas-container">
+                            <!-- Reservas Registradas -->
+                            <div class="card shadow-sm p-4">
+                                <h2 class="mb-3">Reservas Registradas</h2>
+                                <ul id="listaReservas" class="list-group"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 

@@ -127,6 +127,154 @@ th, td {
     z-index: 9999; /* Asegúrate de que sea mayor que otros elementos */
 }
 
+.reserva-vencida {
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+}
+
+.reserva-vencida span {
+    color: rgb(0, 0, 0);
+}
+
+.reserva-proxima span {
+    color: rgb(0, 0, 0);
+}
+
+.reserva-proxima {
+    background-color: #fff8e1;
+    border-left: 4px solid #ffc107;
+}
+.notificacion-badge {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1100;
+}
+.modal-notification .modal-header {
+    border-bottom: none;
+}
+.modal-notification.warning .modal-header {
+    color: #664d03;
+    background-color: rgb(209, 183, 98);
+}
+.modal-notification.danger .modal-header {
+    background-color: #f8d7da;
+    color: #58151c;
+}
+.modal-notification.success .modal-header {
+    background-color: #d1e7dd;
+    color: #0a3622;
+}
+.reserva-info {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 5px;
+    border-left: 4px solid #dc3545;
+}
+.reserva-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+.btn-custom-danger {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+}
+.btn-custom-danger:hover {
+    background-color: #bb2d3b;
+    color: white;
+}
+
+/* Nuevos estilos para el diseño de dos columnas */
+.main-container {
+    display: flex; /* Convierte el contenedor en un contenedor flexible */
+    justify-content: space-between; /* Coloca el formulario y la columna de reservas en los extremos */
+    align-items: flex-start; /* Alinea los elementos al inicio verticalmente */
+    gap: 20px; /* Espaciado entre los elementos */
+    width: 100%; /* Asegura que ocupe todo el ancho disponible */
+}
+
+.form-column {
+    flex: 2;
+    min-width: 0; /* Para evitar problemas con el flex */
+}
+
+.reservas-column {
+    flex: 1;
+    min-width: 900px;
+}
+
+.reservas-container {
+    position: sticky;
+    top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Estilos para las tarjetas de reservas */
+.reservas-column .card {
+    min-height: 600px;
+    overflow-y: auto;
+}
+
+/* Estilos responsivos */
+@media (max-width: 992px) {
+    .main-container {
+        flex-direction: column;
+    }
+    
+    .reservas-container {
+        position: static;
+    }
+    
+    .reservas-column .card {
+        max-height: none;
+    }
+}
+
+/* Mejoras para la lista de reservas */
+#listaReservas {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+#alertas, #vencidas {
+    max-height: 75px;
+    margin-bottom: 0;
+    overflow-y: auto;
+    justify-content: center;
+    padding: auto;
+}
+
+
+.list-group-item {
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.list-group-item span {
+    flex-grow: 1;
+    margin-right: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.container {
+    padding: 0 !important; /* Elimina el padding por defecto */
+    margin: 40px; /* Mantiene el centrado horizontal si es necesario */
+    max-width: 96%; /* Asegura que ocupe todo el ancho disponible */
+}
 
 
 

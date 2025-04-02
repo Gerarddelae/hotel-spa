@@ -212,62 +212,54 @@ function actionFormatter(value, row, index, jsonUrl) {
 }
 
 async function deleteRow(button) {
-  const id = button.getAttribute("data-id");
-  const jsonUrl = button.getAttribute("data-path");
-
-  if (!id || !jsonUrl) {
-    console.error("Faltan datos para eliminar el registro.");
-    return;
-  }
-
+  const id = button.dataset.id;
+  const path = button.dataset.path;
   const token = localStorage.getItem("access_token");
-  if (!token) {
-    alert("No estás autenticado. Inicia sesión.");
-    return;
-  }
-
-  if (
-    !confirm(`¿Estás seguro de que deseas eliminar el registro con ID ${id}?`)
-  ) {
-    return;
-  }
+  
+  if (!confirm(`¿Eliminar reserva #${id}? Se archivará automáticamente.`)) return;
 
   try {
-    const response = await fetch(`${jsonUrl}/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      // Mostrar estado de carga
+      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      button.disabled = true;
 
-    if (!response.ok) {
-      throw new Error(`Error al eliminar: ${response.statusText}`);
-    }
+      const response = await fetch(`${path}/${id}`, {
+          method: "DELETE",
+          headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+          }
+      });
 
-    window.mostrarToast("error"); // 🔴 Mostrar notificación de eliminación
+      const data = await response.json();
 
-    console.log(`Registro con ID ${id} eliminado en ${jsonUrl}`);
-    const table = button.closest("table");
-    if (!table) {
-      console.error("No se encontró la tabla para actualizar.");
-      return;
-    }
+      if (!response.ok) {
+          throw new Error(data.message || "Error al eliminar");
+      }
 
-    const tableId = table.getAttribute("id");
-    if (!tableId) {
-      console.error("No se encontró el ID de la tabla.");
-      return;
-    }
+      // Actualizar tabla
+      const table = $(button).closest('table');
+      table.bootstrapTable('remove', {
+          field: 'id',
+          values: [parseInt(id)]
+      });
 
-    $("#" + tableId).bootstrapTable("remove", {
-      field: "id",
-      values: [parseInt(id)],
-    });
+      // Mostrar notificación
+      mostrarToast("success", `Reserva #${id} archivada y eliminada`);
+
   } catch (error) {
-    console.error("Error eliminando el registro:", error);
-    alert(
-      "No se pudo eliminar el registro. Revisa la consola para más detalles."
-    );
+      console.error("Delete error:", error);
+      mostrarToast("error", error.message || "Error interno del servidor");
+      
+      // Recargar tabla si es error 500
+      if (error.message.includes("500")) {
+          const tableId = $(button).closest('table').attr('id');
+          $(`#${tableId}`).bootstrapTable('refresh');
+      }
+  } finally {
+      // Restaurar botón
+      button.innerHTML = '<i class="fas fa-trash"></i>';
+      button.disabled = false;
   }
 }
 

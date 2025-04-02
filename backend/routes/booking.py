@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from ..extensions import db
-from ..models import Booking, Room
+from ..models import Booking, Room, Archivo
 from datetime import datetime, timedelta
 from ..utils.helpers import remove_sensitive_fields
 
@@ -140,25 +140,58 @@ def update_booking(item_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@booking_bp.route("/api/bookings/<int:item_id>", methods=["DELETE"])
+@booking_bp.route("/api/bookings/<int:booking_id>", methods=["DELETE"])
 @jwt_required()
-def delete_booking(item_id):
-    item = Booking.query.get(item_id)
-    if not item:
-        return jsonify({"error": "Reserva no encontrada"}), 404
-    
+def delete_booking(booking_id):
     try:
-        # Obtener la habitación y cambiar su disponibilidad
-        room = Room.query.get(item.habitacion_id)
+        # Iniciar transacción
+        db.session.begin()
+
+        # 1. Obtener la reserva
+        booking = Booking.query.get(booking_id)
+        if not booking:
+            return jsonify({"error": "Booking not found"}), 404
+
+        # 2. Crear registro archivado (con manejo de valores nulos)
+        archived_booking = Archivo(
+            booking_id=booking.id,
+            cliente_id=booking.cliente_id,
+            habitacion_id=booking.habitacion_id,
+            check_in=booking.check_in,
+            check_out=booking.check_out,
+            tipo_habitacion=booking.tipo_habitacion,
+            num_huespedes=booking.num_huespedes,
+            metodo_pago=booking.metodo_pago,
+            notas=booking.notas or "",  # Manejo de valores nulos
+            valor_reservacion=booking.valor_reservacion or 0.0,
+            fecha_archivo=datetime.utcnow()  # Añadir manualmente
+        )
+        db.session.add(archived_booking)
+
+        # 3. Liberar la habitación
+        room = Room.query.get(booking.habitacion_id)
         if room:
             room.disponibilidad = "Disponible"
-        
-        db.session.delete(item)
+            db.session.add(room)
+
+        # 4. Eliminar la reserva original
+        db.session.delete(booking)
+
+        # Confirmar todos los cambios
         db.session.commit()
-        return jsonify({"message": "Reserva eliminada"}), 200
+
+        return jsonify({
+            "status": "success",
+            "message": "Booking archived and deleted",
+            "archived_id": archived_booking.id
+        }), 200
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "error": "delete_failed",
+            "message": str(e)
+        }), 500
 
 # Ruta para obtener reservas próximas a vencer
 @booking_bp.route("/api/bookings/alertas", methods=["GET"])

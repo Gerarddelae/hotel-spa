@@ -1,5 +1,6 @@
 from ..extensions import db
 from datetime import datetime
+from sqlalchemy import func  # Importa func para usar now()
 
 class Archivo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -15,8 +16,7 @@ class Archivo(db.Model):
     valor_reservacion = db.Column(db.Float, nullable=False, default=0.0)
 
     # Nuevos campos
-    fecha_archivo = db.Column(db.DateTime, default=lambda: datetime.now(datetime.timezone.utc), nullable=False)
-    motivo = db.Column(db.String(100), nullable=True)  # Ejemplo: "No presentado", "Cancelación"
+    fecha_archivo = db.Column(db.DateTime, server_default=func.now(), nullable=False)
 
     cliente = db.relationship("Client", backref="archivos")
     habitacion = db.relationship("Room", backref="archivos")
