@@ -74,3 +74,10 @@ def admin_token(admin_user):
         additional_claims={"role": admin_user.role}
     )
     return token
+
+@pytest.fixture
+def db_session(app):
+    """Fixture que provee una sesión de base de datos para tests"""
+    with app.app_context():
+        yield db.session
+        db.session.rollback()  # Limpieza después de cada test

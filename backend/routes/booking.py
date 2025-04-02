@@ -144,16 +144,13 @@ def update_booking(item_id):
 @jwt_required()
 def delete_booking(booking_id):
     try:
-        # Iniciar transacción
-        db.session.begin()
-
-        # 1. Obtener la reserva
+        # Obtener la reserva
         booking = Booking.query.get(booking_id)
         if not booking:
-            return jsonify({"error": "Booking not found"}), 404
+            return jsonify({"error": "Reserva no encontrada"}), 404
 
-        # 2. Crear registro archivado (con manejo de valores nulos)
-        archived_booking = Archivo(
+        # Crear registro archivado
+        archivo = Archivo(
             booking_id=booking.id,
             cliente_id=booking.cliente_id,
             habitacion_id=booking.habitacion_id,
@@ -162,35 +159,33 @@ def delete_booking(booking_id):
             tipo_habitacion=booking.tipo_habitacion,
             num_huespedes=booking.num_huespedes,
             metodo_pago=booking.metodo_pago,
-            notas=booking.notas or "",  # Manejo de valores nulos
+            notas=booking.notas or "",
             valor_reservacion=booking.valor_reservacion or 0.0,
-            fecha_archivo=datetime.utcnow()  # Añadir manualmente
+            fecha_archivo=datetime.utcnow()
         )
-        db.session.add(archived_booking)
 
-        # 3. Liberar la habitación
+        # Liberar habitación
         room = Room.query.get(booking.habitacion_id)
         if room:
             room.disponibilidad = "Disponible"
             db.session.add(room)
 
-        # 4. Eliminar la reserva original
+        # Realizar operaciones atómicas
+        db.session.add(archivo)
         db.session.delete(booking)
-
-        # Confirmar todos los cambios
         db.session.commit()
 
         return jsonify({
             "status": "success",
-            "message": "Booking archived and deleted",
-            "archived_id": archived_booking.id
+            "message": "Reserva archivada y eliminada",
+            "archived_id": archivo.id
         }), 200
 
     except Exception as e:
         db.session.rollback()
         return jsonify({
             "error": "delete_failed",
-            "message": str(e)
+            "message": "Error interno al procesar la eliminación"
         }), 500
 
 # Ruta para obtener reservas próximas a vencer

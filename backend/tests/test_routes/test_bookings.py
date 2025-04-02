@@ -261,58 +261,46 @@ def test_cancel_booking(client, admin_token, create_test_booking):
     data = json.loads(get_response.data)
     assert data['estado'] == 'cancelada'
 
-def test_delete_booking(client, admin_token, booking_data):
-    """Test para eliminar una reservación."""
-    # Añadir una nota única para facilitar la identificación
-    unique_note = f"Reservación para eliminar - {datetime.now().strftime('%Y%m%d%H%M%S')}"
-    test_data = booking_data.copy()
-    test_data['notas'] = unique_note
+def test_delete_booking(client, admin_token, booking_data, db_session):
+    """Test para eliminar una reservación con manejo adecuado de sesiones"""
+    from backend.models import Booking, Archivo, Room
     
-    # Crear una reservación específica para eliminar
+    # 1. Crear reserva con identificador único
+    test_data = {
+        **booking_data,
+        "notas": f"TEST_DELETE_{datetime.now().strftime('%f')}",
+        "valor_reservacion": 1500.00
+    }
+    
+    # Crear reserva
     response = client.post(
         '/api/bookings',
         headers={'Authorization': f'Bearer {admin_token}'},
-        data=json.dumps(test_data),
-        content_type='application/json'
+        json=test_data
     )
     assert response.status_code == 201
-    print(f"Reservación creada con nota: {unique_note}")
     
-    # Obtener todas las reservaciones
-    bookings_response = client.get(
-        '/api/bookings',
-        headers={'Authorization': f'Bearer {admin_token}'}
-    )
-    assert bookings_response.status_code == 200
-    bookings = json.loads(bookings_response.data)
+    # Obtener ID directamente de la base de datos
+    booking = db_session.query(Booking).filter_by(notas=test_data['notas']).first()
+    assert booking, "Reserva no encontrada en DB"
+    booking_id = booking.id
     
-    # Buscar por la nota única
-    booking_to_delete = None
-    for booking in bookings:
-        if booking.get('notas') == unique_note:
-            booking_to_delete = booking
-            break
-    
-    # Si no lo encontramos por la nota, mostramos información de diagnóstico
-    if booking_to_delete is None:
-        print(f"No se encontró la reservación con nota: {unique_note}")
-        print(f"Reservaciones disponibles: {len(bookings)}")
-        for i, b in enumerate(bookings):
-            print(f"Reservación {i+1}: cliente_id={b.get('cliente_id')}, notas={b.get('notas')}")
-    
-    assert booking_to_delete is not None, "No se pudo encontrar la reservación creada"
-    
-    # Eliminar la reservación
+    # 2. Eliminar la reserva
     delete_response = client.delete(
-        f'/api/bookings/{booking_to_delete["id"]}',
+        f'/api/bookings/{booking_id}',
         headers={'Authorization': f'Bearer {admin_token}'}
     )
     
-    assert delete_response.status_code == 200
-    
-    # Verificar que se eliminó
-    get_response = client.get(
-        f'/api/bookings/{booking_to_delete["id"]}',
-        headers={'Authorization': f'Bearer {admin_token}'}
+    # Verificar respuesta
+    assert delete_response.status_code == 200, (
+        f"Error al eliminar. Status: {delete_response.status_code}\n"
+        f"Respuesta: {delete_response.data.decode()}"
     )
-    assert get_response.status_code == 404
+    
+    # 3. Verificar que se archivó
+    archived = db_session.query(Archivo).filter_by(booking_id=booking_id).first()
+    assert archived, "No se encontró el registro archivado"
+    
+    # 4. Verificar que se liberó la habitación
+    room = db_session.query(Room).get(test_data["habitacion_id"])
+    assert room.disponibilidad.lower() == "disponible", "Habitación no liberada"
