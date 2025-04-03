@@ -329,7 +329,7 @@ function showProximasModal(reservas) {
     }
     
     reservas.forEach(reserva => {
-        const fecha = reserva.vencimimento ? new Date(reserva.vencimiento) : null;
+        const fecha = reserva.vencimiento ? new Date(reserva.vencimiento) : null;
         const reservaDiv = document.createElement('div');
         reservaDiv.className = 'alert alert-warning mb-3';
         reservaDiv.innerHTML = `

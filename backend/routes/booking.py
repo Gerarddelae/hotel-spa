@@ -197,8 +197,7 @@ def alertas_reservas():
         umbral = ahora + timedelta(minutes=10)
         reservas = Booking.query.filter(
             Booking.check_out <= umbral,
-            Booking.check_out > ahora,
-            Booking.notificado == False
+            Booking.check_out > ahora
         ).all()
         return jsonify({
             "alertas": [{

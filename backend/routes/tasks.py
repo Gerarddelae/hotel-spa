@@ -23,6 +23,11 @@ def register_tasks():
                     logger.info(f"Se encontraron {len(alertas)} reservas próximas a vencer.")
                     socketio.emit("alerta_proxima", {"alertas": alertas})
 
+                    # Actualizar el campo 'notificado' a True para las reservas notificadas
+                    for reserva in proximas:
+                        reserva.notificado = True
+                    db.session.commit()  # Guardar los cambios en la base de datos
+
                 # Verificar reservas vencidas y actualizar habitaciones
                 vencidas = Booking.query.filter(
                     Booking.check_out <= ahora
