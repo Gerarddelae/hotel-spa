@@ -176,8 +176,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 dateInput.value = start.format('YYYY-MM-DD HH:mm') + ' - ' + end.format('YYYY-MM-DD HH:mm');
                 
                 // Actualizar los campos ocultos con el formato esperado por el servidor
-                document.getElementById("check_in").value = start.format('YYYY-MM-DDTHH:mm:ss');
-                document.getElementById("check_out").value = end.format('YYYY-MM-DDTHH:mm:ss');
+                document.getElementById("check_in").value = start.utc().format('YYYY-MM-DDTHH:mm:ss');
+                document.getElementById("check_out").value = end.utc().format('YYYY-MM-DDTHH:mm:ss');
                 
                 calcularTotal();
             });
