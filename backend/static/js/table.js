@@ -563,174 +563,171 @@ function renderAmenitiesBadges(amenitiesArray, containerId, countId, inputId) {
   }
 }
 
-// Función específica para preparar el modal de reservaciones para editar
 async function prepareBookingModalForEdit(booking, form) {
   const token = localStorage.getItem("access_token");
   if (!token) {
-      console.error("No se encontró el token de autenticación.");
-      return;
+    console.error("No se encontró el token de autenticación.");
+    return;
   }
 
   try {
-      // Cargar datos de clientes y habitaciones en paralelo
-      const [clientesResponse, habitacionesResponse] = await Promise.all([
-          fetch("/api/clients", {
-              headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch("/api/rooms", {
-              headers: { Authorization: `Bearer ${token}` },
-          }),
-      ]);
+    // Cargar datos de clientes y habitaciones en paralelo
+    const [clientesResponse, habitacionesResponse] = await Promise.all([
+      fetch("/api/clients", {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      fetch("/api/rooms", {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    ]);
 
-      const clientes = await clientesResponse.json();
-      const habitaciones = await habitacionesResponse.json();
+    const clientes = await clientesResponse.json();
+    const habitaciones = await habitacionesResponse.json();
 
-      // Guardar habitaciones en localStorage para uso posterior
-      localStorage.setItem("habitaciones", JSON.stringify(habitaciones));
+    // Guardar habitaciones en localStorage para uso posterior
+    localStorage.setItem("habitaciones", JSON.stringify(habitaciones));
 
-      // Preparar selects antes de inicializar Choices.js
-      const clienteSelect = form.querySelector("#nombreBooking");
-      const habitacionSelect = form.querySelector("#num_habitacion");
+    // Preparar selects antes de inicializar Choices.js
+    const clienteSelect = form.querySelector("#nombreBooking");
+    const habitacionSelect = form.querySelector("#num_habitacion");
 
-      if (!clienteSelect || !habitacionSelect) {
-          console.error("No se encontraron los selectores #nombreBooking o #num_habitacion.");
-          return;
+    if (!clienteSelect || !habitacionSelect) {
+      console.error("No se encontraron los selectores #nombreBooking o #num_habitacion.");
+      return;
+    }
+
+    // Limpiar selects
+    clienteSelect.innerHTML = "";
+    habitacionSelect.innerHTML = "";
+
+    // Llenar select de clientes
+    clientes.forEach((cliente) => {
+      const option = document.createElement("option");
+      option.value = cliente.id;
+      option.textContent = cliente.nombre;
+      clienteSelect.appendChild(option);
+    });
+
+    // Llenar select de habitaciones (solo incluir disponibles)
+    if (habitaciones && habitaciones.length > 0) {
+      const habitacionesDisponibles = habitaciones.filter(
+        (hab) => hab.disponibilidad === "Disponible"
+      );
+
+      habitacionesDisponibles.forEach((hab) => {
+        const option = document.createElement("option");
+        option.value = hab.id;
+        option.textContent = `Habitación ${hab.num_habitacion}`;
+        habitacionSelect.appendChild(option);
+      });
+    } else {
+      console.warn("No se encontraron habitaciones disponibles.");
+    }
+
+    // Inicializar o reinicializar Choices.js
+    initializeChoicesForBookingForm(clienteSelect, habitacionSelect, booking);
+
+    // Formatear y establecer fechas
+    const checkIn = moment.utc(booking.check_in);
+    const checkOut = moment.utc(booking.check_out);
+
+    // Actualizar campos ocultos
+    const checkInField = form.querySelector("#check_in");
+    if (checkInField) {
+      checkInField.value = checkIn.format("YYYY-MM-DDTHH:mm:ss[Z]");
+    }
+
+    const checkOutField = form.querySelector("#check_out");
+    if (checkOutField) {
+      checkOutField.value = checkOut.format("YYYY-MM-DDTHH:mm:ss[Z]");
+    }
+
+    // Manejar el DateRangePicker
+    const dateRangeInput2 = form.querySelector("#datetimerange-input2");
+    if (dateRangeInput2) {
+      // Destruir instancia anterior si existe
+      if (dateRangeInput2.dateRangePicker) {
+        dateRangeInput2.dateRangePicker.destroy();
+        delete dateRangeInput2.dateRangePicker;
       }
 
-      // Limpiar selects
-      clienteSelect.innerHTML = "";
-      habitacionSelect.innerHTML = "";
+      // Clonar el elemento para eliminar event listeners residuales
+      const newElement = dateRangeInput2.cloneNode(true);
+      dateRangeInput2.parentNode.replaceChild(newElement, dateRangeInput2);
+      const cleanDateInput = newElement;
 
-      // Llenar select de clientes
-      clientes.forEach((cliente) => {
-          const option = document.createElement("option");
-          option.value = cliente.id;
-          option.textContent = cliente.nombre;
-          clienteSelect.appendChild(option);
+      // Configurar nuevo DateRangePicker
+      cleanDateInput.dateRangePicker = new DateRangePicker(cleanDateInput, {
+        timePicker: true,
+        alwaysShowCalendars: true,
+        autoApply: true,
+        startDate: checkIn,
+        endDate: checkOut,
+        locale: { format: "YYYY-MM-DD HH:mm" },
+        showDropdowns: true,
+      }, function (start, end) {
+        cleanDateInput.value = start.format("YYYY-MM-DD HH:mm") + " - " + end.format("YYYY-MM-DD HH:mm");
+        form.querySelector("#check_in").value = start.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
+        form.querySelector("#check_out").value = end.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
+        calcularTotal(form);
       });
 
-      // Llenar select de habitaciones (solo incluir disponibles)
-      if (habitaciones && habitaciones.length > 0) {
-          const habitacionesDisponibles = habitaciones.filter(
-              (hab) => hab.disponibilidad === "Disponible"
-          ); // Filtrar solo habitaciones disponibles
+      // Configurar prevención de entrada manual
+      cleanDateInput.addEventListener("keydown", function (e) {
+        e.preventDefault();
+        return false;
+      });
+      cleanDateInput.setAttribute("readonly", "readonly");
+    }
 
-          habitacionesDisponibles.forEach((hab) => {
-              const option = document.createElement("option");
-              option.value = hab.id;
-              option.textContent = `Habitación ${hab.num_habitacion}`;
-              habitacionSelect.appendChild(option);
-          });
-      } else {
-          console.warn("No se encontraron habitaciones disponibles.");
+    // Buscar la habitación seleccionada para mostrar sus detalles
+    const habitacionSeleccionada = habitaciones.find(
+      (h) => h.id == booking.habitacion_id
+    );
+    if (habitacionSeleccionada) {
+      const tipoHabitacionField = form.querySelector("#tipo_habitacion");
+      if (tipoHabitacionField) {
+        tipoHabitacionField.value = habitacionSeleccionada.tipo;
       }
 
-      // Inicializar o reinicializar Choices.js
-      initializeChoicesForBookingForm(clienteSelect, habitacionSelect, booking);
-
-      // Formatear y establecer fechas - Corregido para manejar formato UTC correctamente
-      // Parsear fechas como UTC manteniendo el tiempo original
-      const checkIn = moment.utc(booking.check_in);
-      const checkOut = moment.utc(booking.check_out);
-
-      const checkInField = form.querySelector("#check_in");
-      if (checkInField) {
-          // Formato ISO 8601 para enviar al servidor
-          checkInField.value = checkIn.format("YYYY-MM-DDTHH:mm:ss[Z]");
-      } else {
-          console.error("No se encontró el campo #check_in en el formulario.");
+      const numHuespedesField = form.querySelector("#num_huespedes");
+      if (numHuespedesField) {
+        numHuespedesField.max = habitacionSeleccionada.capacidad;
+        numHuespedesField.value =
+          booking.num_huespedes || habitacionSeleccionada.capacidad;
       }
 
-      const checkOutField = form.querySelector("#check_out");
-      if (checkOutField) {
-          // Formato ISO 8601 para enviar al servidor
-          checkOutField.value = checkOut.format("YYYY-MM-DDTHH:mm:ss[Z]");
-      } else {
-          console.error("No se encontró el campo #check_out en el formulario.");
+      const precioNocheField = form.querySelector("#precio_noche");
+      if (precioNocheField) {
+        precioNocheField.value = habitacionSeleccionada.precio_noche;
       }
+    }
 
-      const dateRangeInput2 = form.querySelector("#datetimerange-input2");
-      if (dateRangeInput2) {
-          // Prevenir entrada de teclado
-          dateRangeInput2.addEventListener("keydown", function (e) {
-              e.preventDefault();
-              return false;
-          });
+    // Establecer otros campos
+    const totalPagarField = form.querySelector("#total_pagar");
+    if (totalPagarField) {
+      totalPagarField.value = booking.valor_reservacion;
+    }
 
-          // Establecer como solo lectura
-          dateRangeInput2.setAttribute("readonly", "readonly");
+    const metodoPagoField = form.querySelector("#metodo_pago");
+    if (metodoPagoField) {
+      metodoPagoField.value = booking.metodo_pago;
+    }
 
-          // Inicializar el DateRangePicker - usando momentos UTC sin convertir a local
-          new DateRangePicker(dateRangeInput2, {
-              timePicker: true,
-              alwaysShowCalendars: true,
-              autoApply: true,
-              startDate: checkIn, // Sin convertir a local para mantener hora UTC
-              endDate: checkOut,  // Sin convertir a local para mantener hora UTC
-              locale: { format: "YYYY-MM-DD HH:mm" },
-              showDropdowns: true,
-          }, function (start, end) {
-              // Actualizar el input visible con el formato correcto
-              dateRangeInput2.value = start.format("YYYY-MM-DD HH:mm") + " - " + end.format("YYYY-MM-DD HH:mm");
+    const estadoReservaField = form.querySelector("#estado_reserva");
+    if (estadoReservaField) {
+      estadoReservaField.value = booking.estado;
+    }
 
-              // Actualizar los campos ocultos con el formato ISO 8601 para el servidor
-              form.querySelector("#check_in").value = start.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
-              form.querySelector("#check_out").value = end.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
+    const notasField = form.querySelector("#notas");
+    if (notasField) {
+      notasField.value = booking.notas || "";
+    }
 
-              calcularTotal(form);
-          });
-      } else {
-          console.error("No se encontró el campo #datetimerange-input2 en el formulario del modal.");
-      }
-
-      // Buscar la habitación seleccionada para mostrar sus detalles
-      const habitacionSeleccionada = habitaciones.find(
-          (h) => h.id == booking.habitacion_id
-      );
-      if (habitacionSeleccionada) {
-          const tipoHabitacionField = form.querySelector("#tipo_habitacion");
-          if (tipoHabitacionField) {
-              tipoHabitacionField.value = habitacionSeleccionada.tipo;
-          }
-
-          const numHuespedesField = form.querySelector("#num_huespedes");
-          if (numHuespedesField) {
-              numHuespedesField.max = habitacionSeleccionada.capacidad;
-              numHuespedesField.value =
-                  booking.num_huespedes || habitacionSeleccionada.capacidad;
-          }
-
-          const precioNocheField = form.querySelector("#precio_noche");
-          if (precioNocheField) {
-              precioNocheField.value = habitacionSeleccionada.precio_noche;
-          }
-      }
-
-      // Establecer otros campos
-      const totalPagarField = form.querySelector("#total_pagar");
-      if (totalPagarField) {
-          totalPagarField.value = booking.valor_reservacion;
-      }
-
-      const metodoPagoField = form.querySelector("#metodo_pago");
-      if (metodoPagoField) {
-          metodoPagoField.value = booking.metodo_pago;
-      }
-
-      const estadoReservaField = form.querySelector("#estado_reserva");
-      if (estadoReservaField) {
-          estadoReservaField.value = booking.estado;
-      }
-
-      const notasField = form.querySelector("#notas");
-      if (notasField) {
-          notasField.value = booking.notas || "";
-      }
-
-      // Calcular total
-      calcularTotal(form);
+    // Calcular total
+    calcularTotal(form);
   } catch (error) {
-      console.error("Error al preparar el formulario de reserva:", error);
+    console.error("Error al preparar el formulario de reserva:", error);
   }
 }
 
