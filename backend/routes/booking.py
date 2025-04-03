@@ -149,6 +149,16 @@ def delete_booking(booking_id):
         if not booking:
             return jsonify({"error": "Reserva no encontrada"}), 404
 
+        # Determinar el estado para el archivo según el estado actual de la reserva
+        if booking.estado == "vencida":
+            estado_archivo = "vencida"
+        elif booking.estado == "pendiente":
+            estado_archivo = "cancelada"
+        elif booking.estado == "confirmada":
+            estado_archivo = "reembolso"
+        else:
+            estado_archivo = booking.estado  # Por si hay otros estados no contemplados
+
         # Crear registro archivado
         archivo = Archivo(
             booking_id=booking.id,
@@ -161,6 +171,7 @@ def delete_booking(booking_id):
             metodo_pago=booking.metodo_pago,
             notas=booking.notas or "",
             valor_reservacion=booking.valor_reservacion or 0.0,
+            estado=estado_archivo,  # Asignar el estado determinado
             fecha_archivo=datetime.utcnow()
         )
 
@@ -178,7 +189,8 @@ def delete_booking(booking_id):
         return jsonify({
             "status": "success",
             "message": "Reserva archivada y eliminada",
-            "archived_id": archivo.id
+            "archived_id": archivo.id,
+            "archived_status": estado_archivo  # Incluir el estado en la respuesta
         }), 200
 
     except Exception as e:

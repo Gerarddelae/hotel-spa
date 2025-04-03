@@ -14,6 +14,7 @@ class Archivo(db.Model):
     metodo_pago = db.Column(db.String(50), nullable=False)
     notas = db.Column(db.Text, nullable=True)
     valor_reservacion = db.Column(db.Float, nullable=False, default=0.0)
+    estado = db.Column(db.String(20), nullable=False, default="vencida")
 
     # Nuevos campos
     fecha_archivo = db.Column(db.DateTime, server_default=func.now(), nullable=False)
