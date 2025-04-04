@@ -555,25 +555,46 @@ async function prepareBookingModalForEdit(booking, form) {
 
   // Variables para instancias
   let choicesInstances = {};
-  let dateRangePickerInstance = null; // Variable para controlar la instancia
   let observers = [];
+  let datePickerInstance = null;
 
   try {
     // 1. Elementos del formulario
     const clienteSelect = form.querySelector("#nombreBooking");
     const habitacionSelect = form.querySelector("#num_habitacion");
-    const dateRangeInput = form.querySelector("#datetimerange-input2");
+    const dateRangeInput = document.getElementById("datetimerange-input2");
     const tipoHabitacionInput = form.querySelector("#tipo_habitacion");
     const precioNocheInput = form.querySelector("#precio_noche");
     const numHuespedesInput = form.querySelector("#num_huespedes");
 
-    // 2. Función para destruir DateRangePicker existente
+    // 2. Función para destruir DateRangePicker existente de manera efectiva
     const destroyDatePicker = () => {
-      if (dateRangePickerInstance && typeof dateRangePickerInstance.destroy === 'function') {
-        dateRangePickerInstance.destroy();
-        console.log('DateRangePicker anterior destruido');
+      try {
+        // Comprobamos si existe una instancia en el DOM actual
+        const pickerElement = document.querySelector('.daterangepicker');
+        if (pickerElement) {
+          pickerElement.remove();
+        }
+        
+        // Destruimos la instancia JavaScript si existe
+        if (datePickerInstance) {
+          if (typeof datePickerInstance.destroy === 'function') {
+            datePickerInstance.destroy();
+          }
+          datePickerInstance = null;
+          console.log('DateRangePicker anterior destruido correctamente');
+        }
+        
+        // Limpiamos listeners previos
+        if (dateRangeInput) {
+          const newInput = dateRangeInput.cloneNode(true);
+          dateRangeInput.parentNode.replaceChild(newInput, dateRangeInput);
+          return newInput; // Retornamos el nuevo input para usarlo
+        }
+      } catch (error) {
+        console.error("Error al destruir DateRangePicker:", error);
       }
-      dateRangePickerInstance = null;
+      return dateRangeInput;
     };
 
     // 3. Función para actualizar detalles de habitación
@@ -596,7 +617,7 @@ async function prepareBookingModalForEdit(booking, form) {
       }
     };
 
-    // 4. Configuración de Choices.js (versión actualizada)
+    // 4. Configuración de Choices.js
     const initChoices = () => {
       // Destruir instancias anteriores si existen
       if (choicesInstances.nombreBooking) choicesInstances.nombreBooking.destroy();
@@ -610,14 +631,14 @@ async function prepareBookingModalForEdit(booking, form) {
       });
       choicesInstances.nombreBooking.setChoiceByValue(booking.cliente_id?.toString());
 
-      // Selector de habitaciones con event listener moderno
+      // Selector de habitaciones
       choicesInstances.num_habitacion = new Choices(habitacionSelect, {
         removeItemButton: true,
         searchEnabled: true,
         shouldSort: false
       });
 
-      // Event listener para cambios en habitación (nueva sintaxis)
+      // Event listener para cambios en habitación
       habitacionSelect.addEventListener('change', (e) => {
         updateRoomDetails(e.detail.value);
       });
@@ -657,13 +678,15 @@ async function prepareBookingModalForEdit(booking, form) {
     // 7. Inicializar Choices
     initChoices();
 
-    // 8. Configurar DateRangePicker (CON CORRECCIÓN)
-    destroyDatePicker(); // Destruir instancia anterior primero
+    // 8. Configurar DateRangePicker (CORREGIDO)
+    // Primero destruimos cualquier instancia anterior y obtenemos un input limpio
+    const cleanDateInput = destroyDatePicker();
 
     const checkIn = moment.utc(booking.check_in).local();
     const checkOut = moment.utc(booking.check_out).local();
 
-    dateRangePickerInstance = new DateRangePicker(dateRangeInput, {
+    // Inicializamos nueva instancia
+    datePickerInstance = new DateRangePicker(cleanDateInput, {
       timePicker: true,
       alwaysShowCalendars: true,
       autoApply: true,
@@ -681,8 +704,8 @@ async function prepareBookingModalForEdit(booking, form) {
       },
       showDropdowns: true,
       opens: "center"
-    }, (start, end) => {
-      dateRangeInput.value = `${start.format("YYYY-MM-DD HH:mm")} - ${end.format("YYYY-MM-DD HH:mm")}`;
+    }, function(start, end) {
+      cleanDateInput.value = `${start.format("YYYY-MM-DD HH:mm")} - ${end.format("YYYY-MM-DD HH:mm")}`;
       form.querySelector("#check_in").value = start.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
       form.querySelector("#check_out").value = end.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
       if (typeof calcularTotal === 'function') {
@@ -690,8 +713,12 @@ async function prepareBookingModalForEdit(booking, form) {
       }
     });
 
-    dateRangeInput.value = `${checkIn.local().format("YYYY-MM-DD HH:mm")} - ${checkOut.local().format("YYYY-MM-DD HH:mm")}`;
-    dateRangeInput.setAttribute("readonly", "readonly");
+    cleanDateInput.value = `${checkIn.local().format("YYYY-MM-DD HH:mm")} - ${checkOut.local().format("YYYY-MM-DD HH:mm")}`;
+    cleanDateInput.setAttribute("readonly", "readonly");
+    
+    // Aseguramos que los campos ocultos tengan los valores correctos
+    form.querySelector("#check_in").value = checkIn.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
+    form.querySelector("#check_out").value = checkOut.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
 
     // 9. Configurar otros campos
     const habSeleccionada = habitaciones.find(h => h.id == booking.habitacion_id);
@@ -733,17 +760,33 @@ async function prepareBookingModalForEdit(booking, form) {
 
     observers = setupObservers();
 
-    // 11. Manejar eventos del modal (CON CORRECCIÓN PARA DateRangePicker)
+    // 11. Manejar eventos del modal
     const modalElement = form.closest('.modal');
     if (modalElement) {
+      // Aseguramos limpieza al cerrar modal
+      modalElement.addEventListener('hidden.bs.modal', () => {
+        // Limpiamos observadores
+        observers.forEach(obs => obs.disconnect());
+        observers = [];
+        
+        // Limpiamos datepicker
+        destroyDatePicker();
+        datePickerInstance = null;
+        
+        // Limpiamos choices
+        Object.values(choicesInstances).forEach(instance => {
+          if (instance && typeof instance.destroy === 'function') {
+            instance.destroy();
+          }
+        });
+        choicesInstances = {};
+        
+        console.log('Limpieza completa al cerrar modal');
+      });
+      
+      // Solo calculamos el total cuando se muestra el modal
       modalElement.addEventListener('shown.bs.modal', () => {
         updateRoomDetails(habitacionSelect.value);
-      });
-
-      modalElement.addEventListener('hidden.bs.modal', () => {
-        observers.forEach(obs => obs.disconnect());
-        destroyDatePicker(); // Usar la función de limpieza
-        Object.values(choicesInstances).forEach(instance => instance.destroy());
       });
     }
 

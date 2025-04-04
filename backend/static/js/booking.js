@@ -16,9 +16,10 @@ document.addEventListener("DOMContentLoaded", function () {
         // Función manejadora del click en el tab
         function handleBookingPaneClick() {
             console.log('Click en bookingPane - Inicializando formulario');
+            initializeDatePicker()
+            cargarClientesYHabitaciones();
             if (!formInitialized) {
                 resetBookingForm();
-                cargarClientesYHabitaciones();
                 inicializarFormulario();
                 formInitialized = true;
             }
@@ -57,6 +58,30 @@ document.addEventListener("DOMContentLoaded", function () {
         observerCallback();
     }
 
+    // Función para destruir DateRangePicker de manera efectiva
+    function destroyDatePicker() {
+        try {
+            // Eliminar elemento DOM del DateRangePicker si existe
+            const pickerElement = document.querySelector('.daterangepicker');
+            if (pickerElement) {
+                pickerElement.remove();
+            }
+            
+            // Destruir la instancia JavaScript si existe
+            if (dateRangePickerInstance) {
+                if (typeof dateRangePickerInstance.destroy === 'function') {
+                    dateRangePickerInstance.destroy();
+                } else if (typeof dateRangePickerInstance.remove === 'function') {
+                    dateRangePickerInstance.remove();
+                }
+                dateRangePickerInstance = null;
+                console.log('DateRangePicker destruido correctamente');
+            }
+        } catch (error) {
+            console.error("Error al destruir DateRangePicker:", error);
+        }
+    }
+
     // Función para resetear completamente el formulario
     function resetBookingForm() {
         console.log('Reseteando formulario de reservas');
@@ -88,14 +113,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 delete choicesInstances.num_habitacion;
             }
 
-            // Limpiar DateRangePicker
-            if (dateRangePickerInstance) {
-                // Algunas implementaciones tienen método remove()
-                if (typeof dateRangePickerInstance.remove === 'function') {
-                    dateRangePickerInstance.remove();
-                }
-                dateRangePickerInstance = null;
-            }
+            // Limpiar DateRangePicker usando la nueva función optimizada
+            destroyDatePicker();
 
             // Resetear estado de inicialización
             formInitialized = false;
@@ -236,12 +255,19 @@ document.addEventListener("DOMContentLoaded", function () {
         .catch(error => console.error("Error al cargar información del cliente:", error));
     }
 
-    // Función para inicializar el DateRangePicker
+    // Función para inicializar el DateRangePicker (Optimizada)
     function initializeDatePicker() {
+        // Primero destruimos cualquier instancia existente
+        destroyDatePicker();
+        
         const dateInput = document.getElementById("datetimerange-input1");
-        if (!dateInput) return;
+        console.log(dateInput);
+        if (!dateInput) {
+            console.error("No se encontró el elemento datetimerange-input1");
+            return;
+        }
 
-        // Clonar el elemento para limpiar completamente
+        // Clonar el elemento para limpiar completamente los event listeners
         const newDateInput = dateInput.cloneNode(true);
         dateInput.parentNode.replaceChild(newDateInput, dateInput);
 
@@ -258,14 +284,46 @@ document.addEventListener("DOMContentLoaded", function () {
             alwaysShowCalendars: true,
             startDate: moment().startOf('day'),
             endDate: moment().startOf('day').add(1, 'days'),
-            locale: { format: "YYYY-MM-DD HH:mm" },
-            showDropdowns: true
+            locale: { 
+                format: "YYYY-MM-DD HH:mm",
+                applyLabel: "Aplicar",
+                cancelLabel: "Cancelar",
+                daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
+                monthNames: [
+                    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+                ]
+            },
+            showDropdowns: true,
+            opens: "center",
+            autoApply: true
         }, function(start, end) {
             newDateInput.value = start.format('YYYY-MM-DD HH:mm') + ' - ' + end.format('YYYY-MM-DD HH:mm');
-            document.getElementById("check_in").value = start.utc().format('YYYY-MM-DDTHH:mm:ss');
-            document.getElementById("check_out").value = end.utc().format('YYYY-MM-DDTHH:mm:ss');
+            
+            // Asegurar que los campos ocultos reciban los valores correctos
+            const checkInField = document.getElementById("check_in");
+            const checkOutField = document.getElementById("check_out");
+            
+            if (checkInField) checkInField.value = start.format('YYYY-MM-DDTHH:mm:ss');
+            if (checkOutField) checkOutField.value = end.format('YYYY-MM-DDTHH:mm:ss');
+            
             calcularTotal();
         });
+        
+        // Establecer valores iniciales
+        newDateInput.value = moment().startOf('day').format('YYYY-MM-DD HH:mm') + ' - ' + 
+                              moment().startOf('day').add(1, 'days').format('YYYY-MM-DD HH:mm');
+        
+        // Asegurar que los campos ocultos tengan los valores iniciales correctos
+        const checkInField = document.getElementById("check_in");
+        const checkOutField = document.getElementById("check_out");
+        
+        if (checkInField) checkInField.value = moment().startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+        if (checkOutField) checkOutField.value = moment().startOf('day').add(1, 'days').format('YYYY-MM-DDTHH:mm:ss');
+        
+        console.log('DateRangePicker inicializado correctamente');
+        
+        return dateRangePickerInstance;
     }
 
     // Función para cargar clientes y habitaciones desde la API
@@ -319,9 +377,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const habitacionesDisponibles = data.filter(hab => hab.disponibilidad === "Disponible");
             console.log("Habitaciones disponibles:", habitacionesDisponibles);
             
-            //localStorage.setItem("allRooms", JSON.stringify(data)); // Guardar todas las habitaciones en localStorage
             // Guardar en localStorage para uso posterior
-            //localStorage.setItem("habitaciones", JSON.stringify(habitacionesDisponibles));
+            localStorage.setItem("habitaciones", JSON.stringify(habitacionesDisponibles));
 
             // Llenar el select
             habitacionesDisponibles.forEach(hab => {
@@ -373,6 +430,8 @@ document.addEventListener("DOMContentLoaded", function () {
     window.cargarClientesYHabitaciones = cargarClientesYHabitaciones;
     window.inicializarFormulario = inicializarFormulario;
     window.resetBookingForm = resetBookingForm;
+    window.calcularTotal = calcularTotal;
+    window.destroyDatePicker = destroyDatePicker;
 
     // Inicializar el observer
     initBookingPaneObserver();
