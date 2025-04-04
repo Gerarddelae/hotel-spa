@@ -276,7 +276,25 @@ th, td {
     max-width: 96%; /* Asegura que ocupe todo el ancho disponible */
 }
 
+/* Habilitar solo opciones válidas */
+.choices__list--dropdown .choices__item--selectable {
+  pointer-events: none; /* Deshabilitar todas por defecto */
+}
 
+.choices__item:not(.choices__item--disabled) {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.choices__item--disabled {
+  opacity: 0.6 !important;
+  pointer-events: none !important;
+}
+
+/* Ocultar input de búsqueda en selects únicos */
+.choices[data-type*="select-one"] .choices__input {
+  display: none !important;
+}
 
 
 

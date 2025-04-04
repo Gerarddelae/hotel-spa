@@ -473,38 +473,27 @@ async function editRow(button) {
 }
 
 
-// Función para llenar un formulario normal con datos
+// ================ FUNCIÓN fillFormWithData (CORREGIDA) ================
 function fillFormWithData(record, form) {
-  // Primero llenar todos los campos normales
-  Object.keys(record).forEach((key) => {
-    if (key !== 'amenidades') {
+  // Llenar campos normales
+  Object.keys(record).forEach(key => {
       const input = form.querySelector(`[name="${key}"]`);
-      if (input) input.value = record[key] || '';
-    }
+      if (input && key !== 'amenidades') input.value = record[key] || '';
   });
 
-  // Manejar las amenidades de forma especial
-  const isEditForm = form.id === "editRoomForm";
-  const containerId = isEditForm ? "#roomEditServicesContainer" : "#servicesContainer";
-  const inputId = isEditForm ? "#roomEditAmenitiesInput" : "#amenitiesInput";
-  const countId = isEditForm ? "#roomEditServiceCount" : "#serviceCount";
-
-  // Convertir el string de amenidades a array
-  const amenitiesString = record.amenidades || "";
-  const amenitiesArray = amenitiesString.split(',')
-    .map(item => item.trim())
-    .filter(item => item !== "");
-
-  // Actualizar el array global correspondiente
-  if (isEditForm) {
-    window.editServices = [...amenitiesArray];
-  } else {
-    window.services = [...amenitiesArray];
+  // Lógica específica para formulario de habitaciones
+  if (form.id === "editRoomForm") {
+      const amenitiesString = record.amenidades || "";
+      const amenitiesArray = amenitiesString.split(',').map(item => item.trim()).filter(item => item !== "");
+      renderAmenitiesBadges(
+          amenitiesArray,
+          '#servicesContainer',
+          '#serviceCount',
+          '#amenitiesInput'
+      );
   }
-
-  // Renderizar las badges
-  renderAmenitiesBadges(amenitiesArray, containerId, countId, inputId);
 }
+
 
 function renderAmenitiesBadges(amenitiesArray, containerId, countId, inputId) {
   const container = document.querySelector(containerId);
@@ -581,6 +570,10 @@ async function prepareBookingModalForEdit(booking, form) {
       }),
     ]);
 
+    if (!clientesResponse.ok || !habitacionesResponse.ok) {
+      throw new Error("Error al cargar datos de clientes o habitaciones");
+    }
+
     const clientes = await clientesResponse.json();
     const habitaciones = await habitacionesResponse.json();
 
@@ -608,23 +601,45 @@ async function prepareBookingModalForEdit(booking, form) {
       clienteSelect.appendChild(option);
     });
 
-    // Llenar select de habitaciones (solo incluir disponibles)
+    // Llenar select de habitaciones
     if (habitaciones && habitaciones.length > 0) {
-      const habitacionesDisponibles = habitaciones.filter(
-        (hab) => hab.disponibilidad === "Disponible"
-      );
+      // Ordenar habitaciones por número
+      habitaciones.sort((a, b) => a.num_habitacion - b.num_habitacion);
 
-      habitacionesDisponibles.forEach((hab) => {
+      habitaciones.forEach((hab) => {
         const option = document.createElement("option");
         option.value = hab.id;
-        option.textContent = `Habitación ${hab.num_habitacion}`;
+        option.textContent = `Habitación ${hab.num_habitacion} (${hab.tipo})`;
+        
+        // MODIFICACIÓN CLAVE: Solo deshabilitar si está ocupada Y NO es la actual
+        if (hab.disponibilidad !== "Disponible" && hab.id != booking.habitacion_id) {
+          option.disabled = true;
+          option.textContent += " - Ocupada";
+        }
+        
+        // Habilitar explícitamente las disponibles que no son la actual
+        if (hab.disponibilidad === "Disponible" && hab.id != booking.habitacion_id) {
+          option.disabled = false;
+        }
+
+        // Marcar la habitación actual
+        if (hab.id == booking.habitacion_id) {
+          option.selected = true;
+          option.style.fontWeight = "bold";
+          option.textContent += " (Actual)";
+          option.setAttribute("data-current", "true");
+          
+          // Forzar disponibilidad si estaba marcada como ocupada
+          option.disabled = false;
+        }
+
         habitacionSelect.appendChild(option);
       });
     } else {
-      console.warn("No se encontraron habitaciones disponibles.");
+      console.warn("No se encontraron habitaciones.");
     }
 
-    // Inicializar o reinicializar Choices.js
+    // Inicializar Choices.js con configuración actualizada
     initializeChoicesForBookingForm(clienteSelect, habitacionSelect, booking);
 
     // Formatear y establecer fechas
@@ -642,7 +657,7 @@ async function prepareBookingModalForEdit(booking, form) {
       checkOutField.value = checkOut.format("YYYY-MM-DDTHH:mm:ss[Z]");
     }
 
-    // Manejar el DateRangePicker
+    // Configurar DateRangePicker
     const dateRangeInput2 = form.querySelector("#datetimerange-input2");
     if (dateRangeInput2) {
       // Destruir instancia anterior si existe
@@ -651,13 +666,8 @@ async function prepareBookingModalForEdit(booking, form) {
         delete dateRangeInput2.dateRangePicker;
       }
 
-      // Clonar el elemento para eliminar event listeners residuales
-      const newElement = dateRangeInput2.cloneNode(true);
-      dateRangeInput2.parentNode.replaceChild(newElement, dateRangeInput2);
-      const cleanDateInput = newElement;
-
       // Configurar nuevo DateRangePicker
-      cleanDateInput.dateRangePicker = new DateRangePicker(cleanDateInput, {
+      dateRangeInput2.dateRangePicker = new DateRangePicker(dateRangeInput2, {
         timePicker: true,
         alwaysShowCalendars: true,
         autoApply: true,
@@ -665,25 +675,21 @@ async function prepareBookingModalForEdit(booking, form) {
         endDate: checkOut,
         locale: { format: "YYYY-MM-DD HH:mm" },
         showDropdowns: true,
-      }, function (start, end) {
-        cleanDateInput.value = start.format("YYYY-MM-DD HH:mm") + " - " + end.format("YYYY-MM-DD HH:mm");
+      }, function(start, end) {
+        dateRangeInput2.value = start.format("YYYY-MM-DD HH:mm") + " - " + end.format("YYYY-MM-DD HH:mm");
         form.querySelector("#check_in").value = start.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
         form.querySelector("#check_out").value = end.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
         calcularTotal(form);
       });
 
-      // Configurar prevención de entrada manual
-      cleanDateInput.addEventListener("keydown", function (e) {
-        e.preventDefault();
-        return false;
-      });
-      cleanDateInput.setAttribute("readonly", "readonly");
+      dateRangeInput2.setAttribute("readonly", "readonly");
     }
 
     // Buscar la habitación seleccionada para mostrar sus detalles
     const habitacionSeleccionada = habitaciones.find(
       (h) => h.id == booking.habitacion_id
     );
+    
     if (habitacionSeleccionada) {
       const tipoHabitacionField = form.querySelector("#tipo_habitacion");
       if (tipoHabitacionField) {
@@ -693,8 +699,7 @@ async function prepareBookingModalForEdit(booking, form) {
       const numHuespedesField = form.querySelector("#num_huespedes");
       if (numHuespedesField) {
         numHuespedesField.max = habitacionSeleccionada.capacidad;
-        numHuespedesField.value =
-          booking.num_huespedes || habitacionSeleccionada.capacidad;
+        numHuespedesField.value = booking.num_huespedes || habitacionSeleccionada.capacidad;
       }
 
       const precioNocheField = form.querySelector("#precio_noche");
@@ -706,17 +711,17 @@ async function prepareBookingModalForEdit(booking, form) {
     // Establecer otros campos
     const totalPagarField = form.querySelector("#total_pagar");
     if (totalPagarField) {
-      totalPagarField.value = booking.valor_reservacion;
+      totalPagarField.value = booking.valor_reservacion || "0.00";
     }
 
     const metodoPagoField = form.querySelector("#metodo_pago");
     if (metodoPagoField) {
-      metodoPagoField.value = booking.metodo_pago;
+      metodoPagoField.value = booking.metodo_pago || "Tarjeta";
     }
 
     const estadoReservaField = form.querySelector("#estado_reserva");
     if (estadoReservaField) {
-      estadoReservaField.value = booking.estado;
+      estadoReservaField.value = booking.estado || "pendiente";
     }
 
     const notasField = form.querySelector("#notas");
@@ -724,89 +729,334 @@ async function prepareBookingModalForEdit(booking, form) {
       notasField.value = booking.notas || "";
     }
 
-    // Calcular total
+    // Calcular total inicial
     calcularTotal(form);
+
   } catch (error) {
     console.error("Error al preparar el formulario de reserva:", error);
+    mostrarToast("error", "Error al cargar datos para edición");
   }
 }
 
-// Función para inicializar Choices.js en el formulario de reserva
-function initializeChoicesForBookingForm(
-  clienteSelect,
-  habitacionSelect,
-  booking
-) {
-  // Destruir instancias previas si existen
-  if (clienteSelect.choicesInstance) {
-    clienteSelect.choicesInstance.destroy();
+// ================ FUNCIÓN PRINCIPAL (prepareBookingModalForEdit) ================
+async function prepareBookingModalForEdit(booking, form) {
+  const token = localStorage.getItem("access_token");
+  if (!token) return console.error("Token no encontrado");
+
+  try {
+      // Cargar datos en paralelo
+      const [clientes, habitaciones] = await Promise.all([
+          fetch("/api/clients", { headers: { Authorization: `Bearer ${token}` } }).then(res => res.json()),
+          fetch("/api/rooms", { headers: { Authorization: `Bearer ${token}` } }).then(res => res.json())
+      ]);
+
+      // Elementos del formulario
+      const clienteSelect = form.querySelector("#nombreBooking");
+      const habitacionSelect = form.querySelector("#num_habitacion");
+      
+      // Limpiar selects
+      clienteSelect.innerHTML = habitacionSelect.innerHTML = "";
+
+      // Llenar clientes
+      clientes.forEach(cliente => {
+          clienteSelect.add(new Option(cliente.nombre, cliente.id));
+      });
+
+      // Llenar habitaciones (lógica mejorada)
+      habitaciones.forEach(hab => {
+          const option = new Option(
+              `Habitación ${hab.num_habitacion} (${hab.tipo})`, 
+              hab.id
+          );
+          
+          const isCurrent = hab.id === booking.habitacion_id;
+          option.disabled = !isCurrent && hab.disponibilidad !== "Disponible";
+          
+          // Marcado visual
+          if (option.disabled) option.text += " - Ocupada";
+          if (isCurrent) {
+              option.text += " (Actual)";
+              option.dataset.current = "true";
+          }
+          
+          habitacionSelect.add(option);
+      });
+
+      // Inicializar componentes
+      initializeChoicesCompatibles(clienteSelect, habitacionSelect, booking, form);
+      initializeDatePickerCompat(form, booking);
+      updateRoomDetailsCompat(form, habitaciones, booking);
+
+  } catch (error) {
+      console.error("Error:", error);
+      mostrarToast("error", "Error al cargar datos");
   }
+}
 
-  if (habitacionSelect.choicesInstance) {
-    habitacionSelect.choicesInstance.destroy();
-  }
-
-  // Inicializar Choices para el selector de clientes
-  clienteSelect.choicesInstance = new Choices(clienteSelect, {
-    removeItemButton: true,
-    searchEnabled: true,
-    itemSelectText: "",
-    shouldSort: false,
-    addItems: false,
-    placeholderValue: "Seleccionar...",
-    placeholder: true,
-  });
-
-  // Inicializar Choices para el selector de habitaciones
-  habitacionSelect.choicesInstance = new Choices(habitacionSelect, {
-    removeItemButton: true,
-    searchEnabled: true,
-    itemSelectText: "",
-    shouldSort: false,
-    addItems: false,
-    placeholderValue: "Seleccionar...",
-    placeholder: true,
-  });
-
-  // Establecer los valores seleccionados
-  if (booking) {
-    clienteSelect.choicesInstance.setChoiceByValue(
-      booking.cliente_id.toString()
-    );
-    habitacionSelect.choicesInstance.setChoiceByValue(
-      booking.habitacion_id.toString()
-    );
-  }
-
-  // Configurar eventos de cambio
-  clienteSelect.addEventListener("change", function () {
-    const selectedValue = this.value;
-    console.log("Cliente seleccionado:", selectedValue);
-  });
-
-  habitacionSelect.addEventListener("change", function () {
-    const selectedValue = this.value;
-    console.log("Habitación seleccionada:", selectedValue);
-
-    // Actualizar información de la habitación
-    const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
-    const habitacionSeleccionada = habitaciones.find(
-      (h) => h.id == selectedValue
-    );
-
-    if (habitacionSeleccionada) {
-      const form = this.closest("form");
-      form.querySelector("#tipo_habitacion").value =
-        habitacionSeleccionada.tipo;
-      form.querySelector("#num_huespedes").max =
-        habitacionSeleccionada.capacidad;
-      form.querySelector("#num_huespedes").value =
-        habitacionSeleccionada.capacidad;
-      form.querySelector("#precio_noche").value =
-        habitacionSeleccionada.precio_noche;
-      calcularTotal(form);
+function initializeChoicesForBookingForm(clienteSelect, habitacionSelect, booking) {
+  // Destruir instancias anteriores
+  [clienteSelect, habitacionSelect].forEach(select => {
+    if (select.choices) {
+      select.choices.destroy();
+      select.choices = null;
     }
   });
+
+  // Configuración para v11.x
+  const baseConfig = {
+    removeItemButton: true,
+    searchEnabled: true,
+    shouldSort: false,
+    allowHTML: true,
+    classNames: {
+      itemSelectable: 'choices__item--selectable',
+      itemDisabled: 'choices__item--disabled'
+    }
+  };
+
+  // Selector de habitaciones
+  const roomChoices = new Choices(habitacionSelect, {
+    ...baseConfig,
+    callbackOnChange: (choice) => {
+      if (choice) {
+        const selectedValue = choice.value;
+        const selectedOption = habitacionSelect.querySelector(`option[value="${selectedValue}"]`);
+        
+        if (selectedOption && !selectedOption.disabled) {
+          const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
+          const hab = habitaciones.find(h => h.id == selectedValue);
+          const form = habitacionSelect.closest("form");
+
+          if (hab) {
+            form.querySelector("#tipo_habitacion").value = hab.tipo;
+            form.querySelector("#precio_noche").value = hab.precio_noche;
+            form.querySelector("#num_huespedes").max = hab.capacidad;
+            calcularTotal(form);
+          }
+        }
+      }
+    }
+  });
+
+  // Plantillas personalizadas
+  roomChoices.passedElement.element.addEventListener('choice', (event) => {
+    // Actualizar visualmente después de selección
+    setTimeout(() => calcularTotal(habitacionSelect.closest("form")), 100);
+  });
+
+  // Configurar opciones iniciales
+  roomChoices.setChoices(
+    Array.from(habitacionSelect.options).map(option => ({
+      value: option.value,
+      label: option.text,
+      disabled: option.disabled,
+      selected: option.selected,
+      customProperties: {
+        'data-current': option.dataset.current || false
+      }
+    })),
+    'value',
+    'label',
+    false
+  );
+}
+
+function initializeChoicesCompatibles(clienteSelect, habitacionSelect, booking, form) {
+  // Destruir instancias anteriores
+  [clienteSelect, habitacionSelect].forEach(select => {
+    if (select.choices) {
+      select.choices.destroy();
+      select.choices = null;
+    }
+  });
+
+  const baseConfig = {
+    removeItemButton: true,
+    searchEnabled: true,
+    shouldSort: false,
+    allowHTML: true,
+    classNames: {
+      itemSelectable: 'choices__item--selectable',
+      itemDisabled: 'choices__item--disabled'
+    }
+  };
+
+  // Selector de clientes
+  new Choices(clienteSelect, {
+    ...baseConfig,
+    shouldSort: true
+  }).setChoiceByValue(booking.cliente_id?.toString());
+
+  // Selector de habitaciones
+  const roomChoices = new Choices(habitacionSelect, {
+    ...baseConfig,
+    callbackOnChange: (choice) => {
+      if (choice.value) {
+        handleRoomChangeCompat(choice.value, form);
+      }
+    }
+  });
+
+  // Configurar opciones
+  roomChoices.setChoices(
+    Array.from(habitacionSelect.options).map(option => ({
+      value: option.value,
+      label: option.text,
+      disabled: option.disabled,
+      selected: option.selected
+    })),
+    'value',
+    'label',
+    false
+  );
+}
+
+
+// ================ FUNCIONES AUXILIARES ================
+function initializeDatePickerCompat(form, booking) {
+  const input = form.querySelector("#datetimerange-input2");
+  
+  // Destruir instancia anterior
+  if (input.dateRangePicker && input.dateRangePicker.destroy) {
+      input.dateRangePicker.destroy();
+  }
+
+  // Nueva instancia
+  input.dateRangePicker = new DateRangePicker(input, {
+      timePicker: true,
+      autoApply: true,
+      startDate: moment.utc(booking.check_in),
+      endDate: moment.utc(booking.check_out),
+      locale: { format: "YYYY-MM-DD HH:mm" }
+  }, (start, end) => {
+      input.value = `${start.format("YYYY-MM-DD HH:mm")} - ${end.format("YYYY-MM-DD HH:mm")}`;
+      form.querySelector("#check_in").value = start.utc().format();
+      form.querySelector("#check_out").value = end.utc().format();
+      calcularTotal(form);
+  });
+}
+
+function updateRoomDetailsCompat(form, habitaciones, booking) {
+  const hab = habitaciones.find(h => h.id == booking.habitacion_id);
+  if (!hab) return;
+
+  form.querySelector("#tipo_habitacion").value = hab.tipo;
+  form.querySelector("#precio_noche").value = hab.precio_noche;
+  const numHuespedes = form.querySelector("#num_huespedes");
+  numHuespedes.max = hab.capacidad;
+  numHuespedes.value = Math.min(booking.num_huespedes || 1, hab.capacidad);
+}
+
+function handleRoomChangeCompat(roomId, form) {
+  const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
+  const hab = habitaciones.find(h => h.id == roomId);
+  if (hab) {
+      form.querySelector("#tipo_habitacion").value = hab.tipo;
+      form.querySelector("#precio_noche").value = hab.precio_noche;
+      calcularTotal(form);
+  }
+}
+
+function createChoiceTemplateCompat(classNames, data, booking) {
+  const div = document.createElement("div");
+  div.className = `${classNames.item} ${data.disabled ? classNames.itemDisabled : ""}`;
+  
+  const isCurrent = data.value === booking.habitacion_id?.toString();
+  let badge = "";
+  if (data.disabled) badge = `<span class="badge bg-danger">Ocupada</span>`;
+  if (isCurrent) badge = `<span class="badge bg-success">Actual</span>`;
+
+  div.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center">
+          <span>${data.label}</span>
+          ${badge}
+      </div>
+  `;
+  return div;
+}
+
+function initializeChoicesForBookingForm(clienteSelect, habitacionSelect, booking) {
+  // Destruir instancias anteriores correctamente
+  [clienteSelect, habitacionSelect].forEach(select => {
+    if (select.choices) {
+      select.choices.destroy();
+      delete select.choices;
+    }
+  });
+
+  // Configuración para v11.x
+  const baseConfig = {
+    removeItemButton: true,
+    searchEnabled: true,
+    shouldSort: false,
+    classNames: {
+      itemSelectable: 'choices__item--selectable',
+      itemDisabled: 'choices__item--disabled'
+    },
+    // Nuevos parámetros en v11
+    allowHTML: true,
+    searchPlaceholderValue: "Buscar...",
+    noResultsText: "No hay resultados",
+    itemSelectText: "Presiona para seleccionar"
+  };
+
+  // Inicializar selector de habitaciones
+  const roomChoices = new Choices(habitacionSelect, {
+    ...baseConfig,
+    // Configuración específica
+    onChange: (choice) => {
+      if (choice) {
+        const selectedValue = choice.value;
+        const selectedOption = habitacionSelect.querySelector(`option[value="${selectedValue}"]`);
+        
+        if (selectedOption && !selectedOption.disabled) {
+          const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
+          const hab = habitaciones.find(h => h.id == selectedValue);
+          const form = habitacionSelect.closest("form");
+
+          if (hab) {
+            form.querySelector("#tipo_habitacion").value = hab.tipo;
+            form.querySelector("#precio_noche").value = hab.precio_noche;
+            form.querySelector("#num_huespedes").max = hab.capacidad;
+            calcularTotal(form);
+          }
+        }
+      }
+    }
+  });
+
+  // Renderizado personalizado (v11)
+  roomChoices.setTemplates({
+    choice: ({ classNames }, data) => {
+      const isDisabled = data.disabled;
+      const isCurrent = data.value === booking.habitacion_id?.toString();
+      
+      return `
+        <div class="${classNames.item} ${isDisabled ? 'choices__item--disabled' : ''}" 
+             data-value="${data.value}"
+             data-choice-selectable>
+          <div class="d-flex justify-content-between align-items-center">
+            <span>${data.label}</span>
+            ${isDisabled ? '<span class="badge bg-danger ms-2">Ocupada</span>' : ''}
+            ${isCurrent ? '<span class="badge bg-success ms-2">Actual</span>' : ''}
+          </div>
+        </div>
+      `;
+    }
+  });
+
+  // Actualizar opciones desde el DOM
+  roomChoices.setChoices(
+    Array.from(habitacionSelect.options).map(option => ({
+      value: option.value,
+      label: option.text,
+      disabled: option.disabled,
+      selected: option.selected
+    })),
+    'value',
+    'label',
+    false
+  );
 }
 
 // Función para calcular el total a pagar
