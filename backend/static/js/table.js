@@ -440,10 +440,10 @@ async function editRow(button) {
                     const displayData = {...updatedData};
                     if (formId === "editBookingForm") {
                         if (displayData.check_in) {
-                            displayData.check_in = moment(displayData.check_in).format("DD/MM/YYYY HH:mm");
+                            displayData.check_in = moment.utc(displayData.check_in).local().format("DD/MM/YYYY HH:mm");
                         }
                         if (displayData.check_out) {
-                            displayData.check_out = moment(displayData.check_out).format("DD/MM/YYYY HH:mm");
+                            displayData.check_out = moment.utc(displayData.check_out).local().format("DD/MM/YYYY HH:mm");
                         }
                     }
 
@@ -611,8 +611,8 @@ async function prepareBookingModalForEdit(booking, form) {
           numHuespedesInput.value = hab.capacidad;
         }
         
-        if (typeof calcularTotal === 'function') {
-          calcularTotal(form);
+        if (typeof calcularTotalModal === 'function') {
+          calcularTotalModal(form);
         }
       }
     };
@@ -708,8 +708,8 @@ async function prepareBookingModalForEdit(booking, form) {
       cleanDateInput.value = `${start.format("YYYY-MM-DD HH:mm")} - ${end.format("YYYY-MM-DD HH:mm")}`;
       form.querySelector("#check_in").value = start.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
       form.querySelector("#check_out").value = end.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
-      if (typeof calcularTotal === 'function') {
-        calcularTotal(form);
+      if (typeof calcularTotalModal === 'function') {
+        calcularTotalModal(form);
       }
     });
 
@@ -742,15 +742,15 @@ async function prepareBookingModalForEdit(booking, form) {
       };
 
       const precioObserver = new MutationObserver(() => {
-        if (typeof calcularTotal === 'function') {
-          calcularTotal(form);
+        if (typeof calcularTotalModal === 'function') {
+          calcularTotalModal(form);
         }
       });
       precioObserver.observe(precioNocheInput, observerConfig);
 
       const huespedesObserver = new MutationObserver(() => {
-        if (typeof calcularTotal === 'function') {
-          calcularTotal(form);
+        if (typeof calcularTotalModal === 'function') {
+          calcularTotalModal(form);
         }
       });
       huespedesObserver.observe(numHuespedesInput, observerConfig);
@@ -791,8 +791,8 @@ async function prepareBookingModalForEdit(booking, form) {
     }
 
     // 12. Calcular total inicial
-    if (typeof calcularTotal === 'function') {
-      calcularTotal(form);
+    if (typeof calcularTotalModal === 'function') {
+      calcularTotalModal(form);
     }
 
   } catch (error) {
@@ -858,7 +858,7 @@ function initializeChoicesForBookingForm(clienteSelect, habitacionSelect, bookin
           numHuespedesInput.value = hab.capacidad;
         }
         
-        calcularTotal(form);
+        calcularTotalModal(form);
       }
     }
   });
@@ -974,7 +974,7 @@ function initializeDatePickerCompat(form, booking) {
       input.value = `${start.format("YYYY-MM-DD HH:mm")} - ${end.format("YYYY-MM-DD HH:mm")}`;
       form.querySelector("#check_in").value = start.utc().format();
       form.querySelector("#check_out").value = end.utc().format();
-      calcularTotal(form);
+      calcularTotalModal(form);
   });
 }
 
@@ -995,7 +995,7 @@ function handleRoomChangeCompat(roomId, form) {
   if (hab) {
       form.querySelector("#tipo_habitacion").value = hab.tipo;
       form.querySelector("#precio_noche").value = hab.precio_noche;
-      calcularTotal(form);
+      calcularTotalModal(form);
   }
 }
 
@@ -1060,7 +1060,7 @@ function initializeChoicesForBookingForm(clienteSelect, habitacionSelect, bookin
             form.querySelector("#tipo_habitacion").value = hab.tipo;
             form.querySelector("#precio_noche").value = hab.precio_noche;
             form.querySelector("#num_huespedes").max = hab.capacidad;
-            calcularTotal(form);
+            calcularTotalModal(form);
           }
         }
       }
@@ -1101,29 +1101,30 @@ function initializeChoicesForBookingForm(clienteSelect, habitacionSelect, bookin
   );
 }
 
-// Función para calcular el total a pagar
-function calcularTotal(form) {
-  const precioNocheInput = form.querySelector("#precio_noche");
-  const totalPagarInput = form.querySelector("#total_pagar");
-  const checkInValue = form.querySelector("#check_in")?.value;
-  const checkOutValue = form.querySelector("#check_out")?.value;
+  function calcularTotalModal(formElement = document.getElementById("editBookingForm")) {
+    console.log(formElement);
+    const precioNocheInput = formElement.querySelector("#precio_noche");
+    const totalPagarInput = formElement.querySelector("#total_pagar");
+    const checkInValue = formElement.querySelector("#check_in")?.value;
+    const checkOutValue = formElement.querySelector("#check_out")?.value;
 
-  if (!checkInValue || !checkOutValue) {
-    totalPagarInput.value = "$0.00";
-    return;
+    if (!checkInValue || !checkOutValue) {
+        totalPagarInput.value = "0.00";
+        return;
+    }
+
+    const checkIn = moment.utc(checkInValue);
+    const checkOut = moment.utc(checkOutValue);
+
+    if (checkIn.isValid() && checkOut.isValid()) {
+        const horas = checkOut.diff(checkIn, 'hours', true);
+        const dias = Math.ceil(horas / 24);
+        const precioPorNoche = parseFloat(precioNocheInput.value) || 0;
+        totalPagarInput.value = (dias * precioPorNoche).toFixed(2);
+    } else {
+        totalPagarInput.value = "0.00";
+    }
   }
-
-  const checkIn = moment(checkInValue);
-  const checkOut = moment(checkOutValue);
-
-  if (checkIn.isValid() && checkOut.isValid()) {
-    let horas = checkOut.diff(checkIn, "hours", true);
-    let dias = Math.ceil(horas / 24);
-    let precioPorNoche = parseFloat(precioNocheInput.value) || 0;
-    totalPagarInput.value =
-      dias > 0 ? `${(dias * precioPorNoche).toFixed(2)}` : "0.00";
-  }
-}
 
 function applyTableHeaderTheme(head) {
   const body = document.body;

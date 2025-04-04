@@ -107,16 +107,30 @@ def update_booking(item_id):
         return jsonify({"error": "Reserva no encontrada"}), 404
     
     try:
+        original_room_id = item.habitacion_id  # Guardar el ID original de la habitación
+        
         # Convertir fechas si están presentes
         if "check_in" in data:
             data["check_in"] = datetime.strptime(data["check_in"], "%Y-%m-%dT%H:%M:%S")
         if "check_out" in data:
             data["check_out"] = datetime.strptime(data["check_out"], "%Y-%m-%dT%H:%M:%S")
             
+        # Aplicar cambios a la reserva
         for key, value in data.items():
             setattr(item, key, value)
         
-        db.session.commit()
+        # Verificar si se cambió la habitación
+        new_room_id = item.habitacion_id
+        if original_room_id != new_room_id:
+            old_room = Room.query.get(original_room_id)
+            new_room = Room.query.get(new_room_id)
+            
+            if old_room:
+                old_room.disponibilidad = "Disponible"  # Liberar la habitación anterior
+            if new_room:
+                new_room.disponibilidad = "Ocupada"     # Ocupar la nueva habitación
+        
+        db.session.commit()  # Confirmar cambios en la reserva y habitaciones
         
         # Preparar la respuesta con las fechas en el formato correcto
         response_data = {
@@ -138,6 +152,7 @@ def update_booking(item_id):
     except ValueError:
         return jsonify({"error": "Formato de fecha inválido, usa YYYY-MM-DDTHH:MM:SS"}), 400
     except Exception as e:
+        db.session.rollback()  # Revertir cambios en caso de error
         return jsonify({"error": str(e)}), 500
 
 @booking_bp.route("/api/bookings/<int:booking_id>", methods=["DELETE"])
