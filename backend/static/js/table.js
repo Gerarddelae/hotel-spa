@@ -561,40 +561,92 @@ async function prepareBookingModalForEdit(booking, form) {
     return;
   }
 
+  // Variables para instancias
+  let choicesInstances = {};
+  let observers = [];
+
   try {
-    // 1. Destruir instancias anteriores
+    // 1. Elementos del formulario
     const clienteSelect = form.querySelector("#nombreBooking");
     const habitacionSelect = form.querySelector("#num_habitacion");
+    const tipoHabitacionInput = form.querySelector("#tipo_habitacion");
+    const precioNocheInput = form.querySelector("#precio_noche");
+    const numHuespedesInput = form.querySelector("#num_huespedes");
+
+    // 2. Manejo del DateRangePicker (CORRECCIÓN CLAVE)
     const dateRangeInput = form.querySelector("#datetimerange-input2");
-
-    // Destruir Choices si existen
-    [clienteSelect, habitacionSelect].forEach(select => {
-      if (select.choices) {
-        select.choices.destroy();
-        select.choices = null;
-      }
-    });
-
-    // Destruir DateRangePicker si existe
+    
+    // Destruir instancia anterior si existe
     if (dateRangeInput.dateRangePicker) {
       dateRangeInput.dateRangePicker.destroy();
-      dateRangeInput.dateRangePicker = null;
+      delete dateRangeInput.dateRangePicker;
     }
 
-    // 2. Cargar datos
+    // Clonar el elemento para limpieza completa
+    const newDateInput = dateRangeInput.cloneNode(true);
+    dateRangeInput.parentNode.replaceChild(newDateInput, dateRangeInput);
+    newDateInput.id = "datetimerange-input2"; // Mantener mismo ID
+
+    // 3. Función para actualizar detalles de habitación
+    const updateRoomDetails = (roomId) => {
+      const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
+      const hab = habitaciones.find(h => h.id == roomId);
+      
+      if (hab) {
+        tipoHabitacionInput.value = hab.tipo;
+        precioNocheInput.value = hab.precio_noche;
+        numHuespedesInput.max = hab.capacidad;
+        
+        if (parseInt(numHuespedesInput.value) > hab.capacidad) {
+          numHuespedesInput.value = hab.capacidad;
+        }
+        
+        if (typeof calcularTotal === 'function') {
+          calcularTotal(form);
+        }
+      }
+    };
+
+    // 4. Configuración de Choices.js
+    const initChoices = () => {
+      if (choicesInstances.nombreBooking) choicesInstances.nombreBooking.destroy();
+      if (choicesInstances.num_habitacion) choicesInstances.num_habitacion.destroy();
+
+      choicesInstances.nombreBooking = new Choices(clienteSelect, {
+        removeItemButton: true,
+        searchEnabled: true,
+        shouldSort: true
+      }).setChoiceByValue(booking.cliente_id?.toString());
+
+      choicesInstances.num_habitacion = new Choices(habitacionSelect, {
+        removeItemButton: true,
+        searchEnabled: true,
+        shouldSort: false
+      });
+
+      habitacionSelect.addEventListener('change', (e) => {
+        updateRoomDetails(e.detail.value);
+      });
+
+      choicesInstances.num_habitacion.setChoiceByValue(booking.habitacion_id?.toString());
+    };
+
+    // 5. Cargar datos iniciales
     const [clientes, habitaciones] = await Promise.all([
       fetch("/api/clients", { headers: { Authorization: `Bearer ${token}` } }).then(res => res.json()),
       fetch("/api/rooms", { headers: { Authorization: `Bearer ${token}` } }).then(res => res.json())
     ]);
 
-    // 3. Configurar selects
-    clienteSelect.innerHTML = "";
+    localStorage.setItem("habitaciones", JSON.stringify(habitaciones));
+
+    // 6. Llenar selects
+    clienteSelect.innerHTML = '';
     clientes.forEach(cliente => {
       const option = new Option(cliente.nombre, cliente.id);
       clienteSelect.add(option);
     });
 
-    habitacionSelect.innerHTML = "";
+    habitacionSelect.innerHTML = '';
     habitaciones.forEach(hab => {
       const option = new Option(
         `Habitación ${hab.num_habitacion} (${hab.tipo})`, 
@@ -608,38 +660,16 @@ async function prepareBookingModalForEdit(booking, form) {
       habitacionSelect.add(option);
     });
 
-    // 4. Inicializar Choices
-    new Choices(clienteSelect, {
-      removeItemButton: true,
-      searchEnabled: true,
-      shouldSort: true
-    }).setChoiceByValue(booking.cliente_id?.toString());
+    // 7. Inicializar Choices
+    initChoices();
 
-    new Choices(habitacionSelect, {
-      removeItemButton: true,
-      searchEnabled: true,
-      callbackOnChange: (choice) => {
-        if (choice.value) {
-          const hab = habitaciones.find(h => h.id == choice.value);
-          if (hab) {
-            form.querySelector("#tipo_habitacion").value = hab.tipo;
-            form.querySelector("#precio_noche").value = hab.precio_noche;
-            calcularTotal(form);
-          }
-        }
-      }
-    });
-
-    // 5. Configurar DateRangePicker (lógica restaurada)
-    const checkIn = moment.utc(booking.check_in);
-    const checkOut = moment.utc(booking.check_out);
-
-    dateRangeInput.dateRangePicker = new DateRangePicker(dateRangeInput, {
+    // 8. Configurar nuevo DateRangePicker en el elemento clonado
+    newDateInput.dateRangePicker = new DateRangePicker(newDateInput, {
       timePicker: true,
       alwaysShowCalendars: true,
       autoApply: true,
-      startDate: checkIn,
-      endDate: checkOut,
+      startDate: moment.utc(booking.check_in).local(),
+      endDate: moment.utc(booking.check_out).local(),
       locale: { 
         format: "YYYY-MM-DD HH:mm",
         applyLabel: "Aplicar",
@@ -653,43 +683,91 @@ async function prepareBookingModalForEdit(booking, form) {
       showDropdowns: true,
       opens: "center"
     }, (start, end) => {
-      dateRangeInput.value = `${start.format("YYYY-MM-DD HH:mm")} - ${end.format("YYYY-MM-DD HH:mm")}`;
+      newDateInput.value = `${start.format("YYYY-MM-DD HH:mm")} - ${end.format("YYYY-MM-DD HH:mm")}`;
       form.querySelector("#check_in").value = start.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
       form.querySelector("#check_out").value = end.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
-      calcularTotal(form);
+      if (typeof calcularTotal === 'function') {
+        calcularTotal(form);
+      }
     });
 
-    dateRangeInput.value = `${checkIn.local().format("YYYY-MM-DD HH:mm")} - ${checkOut.local().format("YYYY-MM-DD HH:mm")}`;
-    dateRangeInput.setAttribute("readonly", "readonly");
+    newDateInput.setAttribute("readonly", "readonly");
+    newDateInput.value = `${moment.utc(booking.check_in).local().format("YYYY-MM-DD HH:mm")} - ${moment.utc(booking.check_out).local().format("YYYY-MM-DD HH:mm")}`;
 
-    // 6. Configurar campos adicionales
+    // 9. Configurar otros campos
     const habSeleccionada = habitaciones.find(h => h.id == booking.habitacion_id);
     if (habSeleccionada) {
-      form.querySelector("#tipo_habitacion").value = habSeleccionada.tipo;
-      form.querySelector("#precio_noche").value = habSeleccionada.precio_noche;
-      form.querySelector("#num_huespedes").max = habSeleccionada.capacidad;
-      form.querySelector("#num_huespedes").value = booking.num_huespedes || 1;
+      tipoHabitacionInput.value = habSeleccionada.tipo;
+      precioNocheInput.value = habSeleccionada.precio_noche;
+      numHuespedesInput.max = habSeleccionada.capacidad;
+      numHuespedesInput.value = booking.num_huespedes || 1;
     }
 
     form.querySelector("#metodo_pago").value = booking.metodo_pago || "Tarjeta";
     form.querySelector("#estado_reserva").value = booking.estado || "pendiente";
     form.querySelector("#notas").value = booking.notas || "";
 
-    // 7. Calcular total inicial
-    calcularTotal(form);
+    // 10. Configurar Observers
+    const setupObservers = () => {
+      const observerConfig = {
+        attributes: true,
+        attributeFilter: ['value'],
+        subtree: true
+      };
+
+      const precioObserver = new MutationObserver(() => {
+        if (typeof calcularTotal === 'function') {
+          calcularTotal(form);
+        }
+      });
+      precioObserver.observe(precioNocheInput, observerConfig);
+
+      const huespedesObserver = new MutationObserver(() => {
+        if (typeof calcularTotal === 'function') {
+          calcularTotal(form);
+        }
+      });
+      huespedesObserver.observe(numHuespedesInput, observerConfig);
+
+      return [precioObserver, huespedesObserver];
+    };
+
+    observers = setupObservers();
+
+    // 11. Manejar eventos del modal
+    const modalElement = form.closest('.modal');
+    if (modalElement) {
+      modalElement.addEventListener('shown.bs.modal', () => {
+        updateRoomDetails(habitacionSelect.value);
+      });
+
+      modalElement.addEventListener('hidden.bs.modal', () => {
+        observers.forEach(obs => obs.disconnect());
+        if (newDateInput.dateRangePicker) {
+          newDateInput.dateRangePicker.destroy();
+        }
+        Object.values(choicesInstances).forEach(instance => instance.destroy());
+      });
+    }
+
+    // 12. Calcular total inicial
+    if (typeof calcularTotal === 'function') {
+      calcularTotal(form);
+    }
 
   } catch (error) {
     console.error("Error al preparar el formulario:", error);
-    mostrarToast("error", "Error al cargar datos para edición");
+    if (typeof mostrarToast === 'function') {
+      mostrarToast("error", "Error al cargar datos para edición");
+    }
   }
 }
-
 function initializeChoicesForBookingForm(clienteSelect, habitacionSelect, booking) {
-  // Destruir instancias anteriores
+  // Destruir instancias anteriores correctamente
   [clienteSelect, habitacionSelect].forEach(select => {
     if (select.choices) {
       select.choices.destroy();
-      select.choices = null;
+      delete select.choices;
     }
   });
 
@@ -698,58 +776,90 @@ function initializeChoicesForBookingForm(clienteSelect, habitacionSelect, bookin
     removeItemButton: true,
     searchEnabled: true,
     shouldSort: false,
-    allowHTML: true,
     classNames: {
       itemSelectable: 'choices__item--selectable',
       itemDisabled: 'choices__item--disabled'
+    },
+    allowHTML: true,
+    searchPlaceholderValue: "Buscar...",
+    noResultsText: "No hay resultados",
+    itemSelectText: "Presiona para seleccionar"
+  };
+
+  // Inicializar selector de clientes
+  const clientChoices = new Choices(clienteSelect, {
+    ...baseConfig,
+    shouldSort: true
+  });
+  
+  clientChoices.setChoiceByValue(booking.cliente_id?.toString());
+
+  // Inicializar selector de habitaciones con eventos correctos para v11
+  const roomChoices = new Choices(habitacionSelect, {
+    ...baseConfig
+  });
+  
+  // En v11, debemos usar el evento change en el elemento subyacente
+  habitacionSelect.addEventListener('choice', function(event) {
+    const selectedValue = event.detail.choice.value;
+    if (selectedValue) {
+      const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
+      const hab = habitaciones.find(h => h.id == selectedValue);
+      const form = habitacionSelect.closest("form");
+
+      if (hab) {
+        form.querySelector("#tipo_habitacion").value = hab.tipo;
+        form.querySelector("#precio_noche").value = hab.precio_noche;
+        const numHuespedesInput = form.querySelector("#num_huespedes");
+        numHuespedesInput.max = hab.capacidad;
+        
+        if (parseInt(numHuespedesInput.value) > hab.capacidad) {
+          numHuespedesInput.value = hab.capacidad;
+        }
+        
+        calcularTotal(form);
+      }
+    }
+  });
+
+  // Renderizado personalizado para v11
+  roomChoices.config.templates = {
+    ...roomChoices.config.templates,
+    choice: function(classNames, data) {
+      const isDisabled = data.disabled;
+      const isCurrent = data.value === booking.habitacion_id?.toString();
+      
+      return `
+        <div class="${classNames.item} ${isDisabled ? classNames.itemDisabled : classNames.itemSelectable}" 
+             data-choice ${isDisabled ? 'data-choice-disabled' : 'data-choice-selectable'}
+             data-id="${data.id}" data-value="${data.value}">
+          <div class="d-flex justify-content-between align-items-center">
+            <span>${data.label}</span>
+            ${isDisabled ? '<span class="badge bg-danger ms-2">Ocupada</span>' : ''}
+            ${isCurrent ? '<span class="badge bg-success ms-2">Actual</span>' : ''}
+          </div>
+        </div>
+      `;
     }
   };
 
-  // Selector de habitaciones
-  const roomChoices = new Choices(habitacionSelect, {
-    ...baseConfig,
-    callbackOnChange: (choice) => {
-      if (choice) {
-        const selectedValue = choice.value;
-        const selectedOption = habitacionSelect.querySelector(`option[value="${selectedValue}"]`);
-        
-        if (selectedOption && !selectedOption.disabled) {
-          const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
-          const hab = habitaciones.find(h => h.id == selectedValue);
-          const form = habitacionSelect.closest("form");
-
-          if (hab) {
-            form.querySelector("#tipo_habitacion").value = hab.tipo;
-            form.querySelector("#precio_noche").value = hab.precio_noche;
-            form.querySelector("#num_huespedes").max = hab.capacidad;
-            calcularTotal(form);
-          }
-        }
-      }
-    }
-  });
-
-  // Plantillas personalizadas
-  roomChoices.passedElement.element.addEventListener('choice', (event) => {
-    // Actualizar visualmente después de selección
-    setTimeout(() => calcularTotal(habitacionSelect.closest("form")), 100);
-  });
-
-  // Configurar opciones iniciales
+  // Actualizar opciones desde el DOM
   roomChoices.setChoices(
     Array.from(habitacionSelect.options).map(option => ({
       value: option.value,
-      label: option.text,
+      label: option.textContent,
       disabled: option.disabled,
-      selected: option.selected,
-      customProperties: {
-        'data-current': option.dataset.current || false
-      }
+      selected: option.selected
     })),
     'value',
     'label',
     false
   );
+  
+  // Establecer el valor seleccionado si existe
+  if (booking.habitacion_id) {
+    roomChoices.setChoiceByValue(booking.habitacion_id.toString());
+  }
 }
 
 function initializeChoicesCompatibles(clienteSelect, habitacionSelect, booking, form) {
