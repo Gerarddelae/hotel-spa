@@ -240,6 +240,12 @@ th, td {
     }
 }
 
+@media (max-width: 768px) {
+    .reservas-column {
+      min-width: 100%;
+    }
+  }
+
 /* Mejoras para la lista de reservas */
 #listaReservas {
     max-height: 500px;
@@ -295,6 +301,8 @@ th, td {
 .choices[data-type*="select-one"] .choices__input {
   display: none !important;
 }
+
+
 
 
 

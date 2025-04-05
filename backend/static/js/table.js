@@ -1,13 +1,24 @@
 document.addEventListener("DOMContentLoaded", () => {
   const tabObserver = new MutationObserver((mutationsList, observer) => {
     const tabs = document.querySelectorAll(".nav-link.search");
-    tabs.forEach((button) => {
+    tabs.forEach((button) => {     
       if (!button.hasEventListener) {
+        if (button.classList.contains("active")) { // Si el tab ya está activo
+          const { path, head, body } = button.dataset;
+          if (path && head && body) {
+            applyTableHeaderTheme(head); // Aplicar tema al encabezado
+            loadTableData(path, head, body);
+          }
+        }
         button.addEventListener("click", (event) => {
           const { path, head, body } = event.target.dataset;
           console.log(path);
           console.log(head);
           if (path && head && body) {
+            // Destruir tabla existente antes de cargar
+            if ($(`#${body}`).data('bootstrap.table')) {
+              $(`#${body}`).bootstrapTable('destroy');
+            }
             loadTableData(path, head, body);
           } else {
             console.error("Faltan atributos en el botón:", event.target);
@@ -65,12 +76,30 @@ async function loadTableData(path, head, body) {
             });
         }
 
+                // Filtrar y formatear datos para la ruta de archivo
+                if (path === "/api/archives") {
+                  data = data.map((item) => {
+                      const { booking_id, cliente_id, habitacion_id, tipo_habitacion, notas, ...filteredItem } = item;
+      
+                      // Formatear fechas
+                      if (filteredItem.check_in) {
+                          filteredItem.check_in = formatDate(filteredItem.check_in);
+                      }
+                      if (filteredItem.check_out) {
+                          filteredItem.check_out = formatDate(filteredItem.check_out);
+                      }
+                      if (filteredItem.fecha_archivo) {
+                          filteredItem.fecha_archivo = formatDate(filteredItem.fecha_archivo);
+                    }
+      
+                      return filteredItem;
+                  });
+              }
+
         console.log("Generando encabezados para el ID:", head);
-        //ensureTableStructure("bookingTable"); // Asegurar la estructura de la tabla
-        generateTableHeaders(Object.keys(data[0]), head); // Generar encabezados
-        cleanTableContainer(body); // Limpiar el contenido del cuerpo de la tabla
+        //cleanTableContainer(body); // Limpiar el contenido del cuerpo de la tabla
         initializeTable(data, body, path); // Inicializar la tabla
-        console.log(head);
+        //generateTableHeaders(Object.keys(data[0]), head); // Generar encabezados
         applyTableHeaderTheme(head); // Aplicar tema al encabezado
     } catch (error) {
         console.error("Error:", error);
@@ -94,6 +123,7 @@ function formatDate(isoString) {
 
 function generateTableHeaders(headers, head) {
   const tableHead = document.getElementById(head);
+  console.log(tableHead);
   if (!tableHead) throw new Error("No se encontró tableHead");
 
   // Limpiar el contenido del <thead> antes de agregar nuevos encabezados
@@ -118,21 +148,24 @@ function generateTableHeaders(headers, head) {
 function initializeTable(data, jsonBody, jsonUrl) {
   // Destruir la tabla existente si hay una
   $("#" + jsonBody).bootstrapTable("destroy");
-
+  
   // Crear las columnas, manteniendo la columna de acciones
   const columns = Object.keys(data[0]).map((key) => ({
     field: key,
     title: key,
     sortable: true,
   }));
-
+  
+  console.log(jsonBody);
   // Agregar columna de acciones
-  columns.push({
-    field: "actions",
-    title: "Acciones",
-    formatter: (value, row, index) =>
-      actionFormatter(value, row, index, jsonUrl),
-  });
+  if (jsonBody !== "archivesTable") {
+    columns.push({
+      field: "actions",
+      title: "Acciones",
+      formatter: (value, row, index) =>
+        actionFormatter(value, row, index, jsonUrl),
+    });
+  }
 
   // Inicializar la tabla con todas las opciones
   $("#" + jsonBody).bootstrapTable({
@@ -140,6 +173,7 @@ function initializeTable(data, jsonBody, jsonUrl) {
     columns: columns,
     search: true,
     pagination: true,
+    responsive: true,
     showRefresh: true, // Activar el botón de refrescar integrado
     onRefresh: function () {
       // Obtener el tab activo basado en la tabla actual
@@ -1126,26 +1160,34 @@ function initializeChoicesForBookingForm(clienteSelect, habitacionSelect, bookin
     }
   }
 
-function applyTableHeaderTheme(head) {
-  const body = document.body;
-
-  let tableHead = document.getElementById(head);
-  if (!tableHead) {
-    console.warn(`El elemento <thead> con ID "${head}" no está disponible. Observando cambios en el DOM...`);
-
-
-    return;
+  function applyTableHeaderTheme(head) {
+    const body = document.body;
+    let tableHead = document.getElementById(head);
+  
+    if (!tableHead) {
+      console.warn(`Observando cambios para aplicar tema en "${head}"...`);
+      const observer = new MutationObserver(() => {
+        tableHead = document.getElementById(head);
+        if (tableHead) {
+          observer.disconnect();
+          applyTheme(tableHead, body);
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      return;
+    }
+  
+    applyTheme(tableHead, body);
   }
-
-  console.log(`El elemento <thead> con ID "${head}" ya está disponible.`);
-  tableHead.classList.remove("custom-header-light", "custom-header-dark");
-
-  if (body.getAttribute("data-bs-theme") === "dark") {
-    tableHead.classList.add("custom-header-dark");
-  } else {
-    tableHead.classList.add("custom-header-light");
+  
+  function applyTheme(tableHead, body) {
+    tableHead.classList.remove("custom-header-light", "custom-header-dark");
+    if (body.getAttribute("data-bs-theme") === "dark") {
+      tableHead.classList.add("custom-header-dark");
+    } else {
+      tableHead.classList.add("custom-header-light");
+    }
   }
-}
 
 function cleanTableContainer(bodyId) {
     // Obtener el elemento <tbody> por su ID
