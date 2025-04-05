@@ -393,7 +393,6 @@ function updateReservasList(forceUpdate = false) {
                     esProxima: alertas.alertas?.some(a => a.id === reserva.id)
                 };
             });
-
             // Ordenar por: 1) Vencidas primero, 2) Próximas a vencer, 3) Otras ordenadas por fecha más cercana
             reservasProcesadas.sort((a, b) => {
                 // Vencidas primero
@@ -465,8 +464,8 @@ function initSocketAndFunctions() {
     });
     
     socket.on('reserva_vencida', data => {
-        console.log(data);
         if (data.vencidas?.length > 0) {
+            console.log(data);
             showVencidasModal(data.vencidas);
             updateReservasList(true);
         }

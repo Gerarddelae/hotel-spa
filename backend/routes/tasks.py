@@ -30,8 +30,7 @@ def register_tasks():
 
                 # 2. Procesar reservas vencidas
                 vencidas = Booking.query.filter(
-                    Booking.check_out <= ahora,
-                    Booking.estado != 'vencida'
+                    Booking.check_out <= ahora
                 ).all()
 
                 if vencidas:
@@ -47,7 +46,7 @@ def register_tasks():
                     
                     db.session.commit()
                     
-                    vencidas_data = [{"id": r.id, "cliente": r.cliente.nombre} for r in vencidas]
+                    vencidas_data = [{"id": r.id, "cliente": r.cliente.nombre, "vencimiento": r.check_out.isoformat()} for r in vencidas]
                     logger.info(f"Reservas marcadas como vencidas: {len(vencidas)}")
                     socketio.emit("reserva_vencida", {"vencidas": vencidas_data})
 

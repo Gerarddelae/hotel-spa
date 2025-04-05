@@ -1,8 +1,9 @@
+from zoneinfo import ZoneInfo
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from ..extensions import db
 from ..models import Booking, Room, Archivo
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from ..utils.helpers import remove_sensitive_fields
 
 booking_bp = Blueprint('booking', __name__)
@@ -187,7 +188,7 @@ def delete_booking(booking_id):
             notas=booking.notas or "",
             valor_reservacion=booking.valor_reservacion or 0.0,
             estado=estado_archivo,  # Asignar el estado determinado
-            fecha_archivo=datetime.utcnow()
+            fecha_archivo=datetime.now(ZoneInfo("America/Bogota")).replace(tzinfo=None)
         )
 
         # Liberar habitación

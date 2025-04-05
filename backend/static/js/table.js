@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (button.classList.contains("active")) { // Si el tab ya está activo
           const { path, head, body } = button.dataset;
           if (path && head && body) {
-            applyTableHeaderTheme(head); // Aplicar tema al encabezado
+            //applyTableHeaderTheme(head); // Aplicar tema al encabezado
             loadTableData(path, head, body);
           }
         }
@@ -63,7 +63,7 @@ async function loadTableData(path, head, body) {
         if (path === "/api/bookings") {
             data = data.map((item) => {
                 const { cliente_id, habitacion_id, ...filteredItem } = item;
-
+                console.log(item);
                 // Formatear fechas
                 if (filteredItem.check_in) {
                     filteredItem.check_in = formatDate(filteredItem.check_in);
@@ -71,7 +71,7 @@ async function loadTableData(path, head, body) {
                 if (filteredItem.check_out) {
                     filteredItem.check_out = formatDate(filteredItem.check_out);
                 }
-
+                console.log(filteredItem);
                 return filteredItem;
             });
         }
@@ -114,7 +114,7 @@ function formatDate(isoString) {
   if (!isoString) return "N/A";
   try {
       // Convertir a hora local explícitamente
-      return moment.utc(isoString).local().format("DD/MM/YYYY HH:mm");
+      return moment.utc(isoString).format("DD/MM/YYYY HH:mm");
   } catch (error) {
       console.error("Error formateando fecha:", error);
       return "Fecha inválida";
@@ -442,6 +442,7 @@ async function editRow(button) {
                 if (updatedData.check_out) {
                     updatedData.check_out = moment.utc(updatedData.check_out).format("YYYY-MM-DDTHH:mm:ss");
                 }
+                console.log(updatedData);
             }
 
             try {
@@ -474,13 +475,13 @@ async function editRow(button) {
                     const displayData = {...updatedData};
                     if (formId === "editBookingForm") {
                         if (displayData.check_in) {
-                            displayData.check_in = moment.utc(displayData.check_in).local().format("DD/MM/YYYY HH:mm");
+                            displayData.check_in = moment.utc(displayData.check_in).format("DD/MM/YYYY HH:mm");
                         }
                         if (displayData.check_out) {
-                            displayData.check_out = moment.utc(displayData.check_out).local().format("DD/MM/YYYY HH:mm");
+                            displayData.check_out = moment.utc(displayData.check_out).format("DD/MM/YYYY HH:mm");
                         }
                     }
-
+                    
                     // Actualizar la fila en la tabla
                     $(`#${table.id}`).bootstrapTable("updateRow", {
                         index: rowIndex,
@@ -715,9 +716,10 @@ async function prepareBookingModalForEdit(booking, form) {
     // 8. Configurar DateRangePicker (CORREGIDO)
     // Primero destruimos cualquier instancia anterior y obtenemos un input limpio
     const cleanDateInput = destroyDatePicker();
-
-    const checkIn = moment.utc(booking.check_in).local();
-    const checkOut = moment.utc(booking.check_out).local();
+    console.log(booking.check_out);
+    const checkIn = moment(booking.check_in, "ddd, DD MMM YYYY HH:mm:ss GMT");
+    const checkOut = moment(booking.check_out, "ddd, DD MMM YYYY HH:mm:ss GMT");
+    console.log(checkIn, checkOut);
 
     // Inicializamos nueva instancia
     datePickerInstance = new DateRangePicker(cleanDateInput, {
@@ -740,8 +742,9 @@ async function prepareBookingModalForEdit(booking, form) {
       opens: "center"
     }, function(start, end) {
       cleanDateInput.value = `${start.format("YYYY-MM-DD HH:mm")} - ${end.format("YYYY-MM-DD HH:mm")}`;
-      form.querySelector("#check_in").value = start.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
-      form.querySelector("#check_out").value = end.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
+      form.querySelector("#check_in").value = start.format("YYYY-MM-DDTHH:mm:ss[Z]");
+      form.querySelector("#check_out").value = end.format("YYYY-MM-DDTHH:mm:ss[Z]");
+      console.log(end.format("YYYY-MM-DDTHH:mm:ss[Z]"));
       if (typeof calcularTotalModal === 'function') {
         calcularTotalModal(form);
       }
@@ -751,8 +754,8 @@ async function prepareBookingModalForEdit(booking, form) {
     cleanDateInput.setAttribute("readonly", "readonly");
     
     // Aseguramos que los campos ocultos tengan los valores correctos
-    form.querySelector("#check_in").value = checkIn.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
-    form.querySelector("#check_out").value = checkOut.utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
+    form.querySelector("#check_in").value = checkIn.format("YYYY-MM-DDTHH:mm:ss[Z]");
+    form.querySelector("#check_out").value = checkOut.format("YYYY-MM-DDTHH:mm:ss[Z]");
 
     // 9. Configurar otros campos
     const habSeleccionada = habitaciones.find(h => h.id == booking.habitacion_id);
