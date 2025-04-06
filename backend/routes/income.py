@@ -24,7 +24,7 @@ def get_all_incomes():
                 "source_id": source_id,
                 "cliente_id": income.cliente_id,
                 "nombre_cliente": income.nombre_cliente,
-                "documento_cliente": income.documento_cliente,
+                "documento": income.documento,
                 "fecha_pago": income.fecha_pago.isoformat(),
                 "monto": income.monto,
                 "metodo_pago": income.metodo_pago,

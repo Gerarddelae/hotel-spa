@@ -127,6 +127,8 @@ def update_booking(item_id):
         # Guardar valores originales para comparación
         original_room_id = booking.habitacion_id
         original_status = booking.estado
+        original_payment_method = booking.metodo_pago
+        original_amount = booking.valor_reservacion
         
         # Convertir fechas si están presentes
         if "check_in" in data:
@@ -149,15 +151,20 @@ def update_booking(item_id):
             if new_room:
                 new_room.disponibilidad = "Ocupada"
         
-        # Crear Income si el estado cambió a "confirmada"
-        if booking.estado == "confirmada" and original_status != "confirmada":
+        # Manejo del Income
+        income_created = False
+        income_updated = False
+        
+        # Verificar si ya existe un Income para esta reserva
+        existing_income = Income.query.filter_by(booking_id=booking.id).first()
+        
+        if booking.estado == "confirmada":
             client = Client.query.get(booking.cliente_id)
             if not client:
                 return jsonify({"error": "Cliente no encontrado"}), 404
             
-            # Verificar si ya existe un Income para esta reserva
-            existing_income = Income.query.filter_by(booking_id=booking.id).first()
-            if not existing_income:
+            if not existing_income and original_status != "confirmada":
+                # Crear nuevo Income si la reserva se confirma por primera vez
                 income = Income(
                     booking_id=booking.id,
                     cliente_id=client.id,
@@ -166,9 +173,21 @@ def update_booking(item_id):
                     monto=booking.valor_reservacion,
                     metodo_pago=booking.metodo_pago,
                     estado_pago="confirmado",
+                    fecha_pago=datetime.now(ZoneInfo("America/Bogota")).replace(tzinfo=None),
                     notas=f"Pago por reserva #{booking.id} (actualizada)"
                 )
                 db.session.add(income)
+                income_created = True
+            elif existing_income:
+                # Actualizar Income existente si hay cambios relevantes
+                if (original_payment_method != booking.metodo_pago or 
+                    original_amount != booking.valor_reservacion or
+                    original_status != "confirmada"):
+                    
+                    existing_income.monto = booking.valor_reservacion
+                    existing_income.metodo_pago = booking.metodo_pago
+                    existing_income.notas = f"Pago actualizado por reserva #{booking.id}"
+                    income_updated = True
         
         db.session.commit()
         
@@ -185,7 +204,9 @@ def update_booking(item_id):
             "estado": booking.estado,
             "notas": booking.notas,
             "valor_reservacion": booking.valor_reservacion,
-            "income_created": booking.estado == "confirmada" and original_status != "confirmada"
+            "income_created": income_created,
+            "income_updated": income_updated,
+            "income_id": existing_income.id if existing_income else None
         }
         
         return jsonify(response_data), 200
@@ -210,7 +231,7 @@ def delete_booking(booking_id):
         elif booking.estado == "pendiente":
             estado_archivo = "cancelada"
         elif booking.estado == "confirmada":
-            estado_archivo = "completada"
+            estado_archivo = "reembolso"
         else:
             estado_archivo = booking.estado
 
@@ -235,9 +256,14 @@ def delete_booking(booking_id):
 
         # Manejo seguro del Income
         income_updated = False
-        if booking.estado == "confirmada":
+        new_income = None
+        
+        if booking.estado in ["confirmada", "vencida"]:
             income = Income.query.filter_by(booking_id=booking.id).first()
             if income:
+                # Determinar el estado del pago basado en el estado de la reserva
+                estado_pago = "confirmado" if booking.estado == "vencida" else "reembolso"
+                
                 # Crear nuevo registro de Income para el archivo
                 new_income = Income(
                     archive_id=archivo.id,
@@ -247,7 +273,7 @@ def delete_booking(booking_id):
                     fecha_pago=income.fecha_pago,
                     monto=income.monto,
                     metodo_pago=income.metodo_pago,
-                    estado_pago="completado",
+                    estado_pago=estado_pago,
                     notas=f"Reserva archivada como {estado_archivo} (original: {income.id})"
                 )
                 db.session.add(new_income)
@@ -271,7 +297,8 @@ def delete_booking(booking_id):
             "archived_id": archivo.id,
             "archived_status": estado_archivo,
             "income_updated": income_updated,
-            "new_income_id": new_income.id if income_updated else None
+            "new_income_id": new_income.id if income_updated else None,
+            "income_status": new_income.estado_pago if income_updated else None
         }), 200
 
     except Exception as e:

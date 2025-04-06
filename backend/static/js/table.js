@@ -96,6 +96,19 @@ async function loadTableData(path, head, body) {
                   });
               }
 
+              // Filtrar y formatear datos para la ruta de archivo
+              if (path === "/api/incomes") {
+                data = data.map((item) => {
+                    const { source_id, cliente_id, ...filteredItem } = item;
+    
+                    if (filteredItem.fecha_pago) {
+                        filteredItem.fecha_pago = formatDate(filteredItem.fecha_pago);
+                  }
+    
+                    return filteredItem;
+                });
+            }
+
         console.log("Generando encabezados para el ID:", head);
         //cleanTableContainer(body); // Limpiar el contenido del cuerpo de la tabla
         initializeTable(data, body, path); // Inicializar la tabla
@@ -158,7 +171,7 @@ function initializeTable(data, jsonBody, jsonUrl) {
   
   console.log(jsonBody);
   // Agregar columna de acciones
-  if (jsonBody !== "archivesTable") {
+  if (jsonBody !== "archivesTable" && jsonBody !== "incomesTable") {
     columns.push({
       field: "actions",
       title: "Acciones",
@@ -641,10 +654,9 @@ async function prepareBookingModalForEdit(booking, form) {
         tipoHabitacionInput.value = hab.tipo;
         precioNocheInput.value = hab.precio_noche;
         numHuespedesInput.max = hab.capacidad;
+        console.log(numHuespedesInput.value);
         
-        if (parseInt(numHuespedesInput.value) > hab.capacidad) {
-          numHuespedesInput.value = hab.capacidad;
-        }
+        numHuespedesInput.value = numHuespedesInput.max;
         
         if (typeof calcularTotalModal === 'function') {
           calcularTotalModal(form);
