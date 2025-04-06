@@ -5,6 +5,7 @@ from .room import room_bp
 from .booking import booking_bp
 from .invalid import invalid_bp
 from .archive import archive_bp
+from .income import income_bp
 
 
 
@@ -17,3 +18,4 @@ def register_blueprints(app):
     app.register_blueprint(booking_bp)
     app.register_blueprint(archive_bp)
     app.register_blueprint(invalid_bp)
+    app.register_blueprint(income_bp)
