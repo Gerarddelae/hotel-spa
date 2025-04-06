@@ -149,7 +149,14 @@ def test_delete_confirmed_booking_updates_income(client, admin_token, create_tes
     updated_income = session.query(Income).filter_by(archive_id=archived.id).first()
     assert updated_income is not None
     assert updated_income.booking_id is None
-    assert updated_income.estado_pago == "completado"
+    
+    # Verificar el estado del pago según el estado de la reserva
+    if booking.estado == "vencida":
+        assert updated_income.estado_pago == "confirmado"
+    elif booking.estado == "confirmada":
+        assert updated_income.estado_pago == "reembolso"
+    else:
+        assert updated_income.estado_pago == "completado"
 
 def test_delete_non_confirmed_booking(client, admin_token, booking_data, session):
     """Test que verifica el manejo de reservas no confirmadas al eliminar."""
