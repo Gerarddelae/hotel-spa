@@ -524,10 +524,21 @@
   function darkModeHandler() {
     const currentTheme = document.documentElement.getAttribute("data-bs-theme");
     const newTheme = currentTheme === "light" ? "dark" : "light";
+    
+    // Desactiva transiciones durante el cambio
+    document.documentElement.style.transition = 'none';
+    
     document.documentElement.setAttribute("data-bs-theme", newTheme);
-
-    updateChartsTheme();
-  }
+    
+    // Fuerza un reflow para asegurar que los cambios se aplican
+    document.documentElement.offsetHeight;
+    
+    // Restaura las transiciones
+    document.documentElement.style.transition = '';
+    
+    // Actualiza los gráficos con un pequeño retraso para asegurar que los estilos se han aplicado
+    setTimeout(updateChartsTheme, 50);
+}
 
   function updateChartsTheme() {
     const textColor = getComputedStyle(document.body).color;

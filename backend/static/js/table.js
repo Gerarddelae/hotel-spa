@@ -208,6 +208,17 @@ function initializeTable(data, jsonBody, jsonUrl) {
     search: true,
     pagination: true,
     responsive: true,
+    // Configuración de exportación
+    showExport: true,
+    exportTypes: ['json', 'xml', 'csv', 'txt', 'sql', 'excel', 'pdf'],
+    exportOptions: {
+        fileName: jsonBody,
+        ignoreColumn: ['actions'], // Columnas a ignorar en la exportación
+        onCellHtmlData: function(cell, rowIndex, colIndex, htmlData) {
+            // Puedes manipular los datos antes de exportar
+            return htmlData;
+        }
+    },
     showRefresh: true, // Activar el botón de refrescar integrado
     onRefresh: function () {
       // Obtener el tab activo basado en la tabla actual
