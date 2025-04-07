@@ -11,8 +11,8 @@ stats_bp = Blueprint('stats', __name__)
 @jwt_required()
 def get_daily_revenue():
     try:
-        # Consulta de ingresos diarios (usando check_in como referencia)
-        revenue_data = db.session.query(
+        # Consulta de ingresos diarios (booking + archive)
+        booking_revenue = db.session.query(
             func.strftime('%Y-%m-%d', Booking.check_in).label('date'),
             func.sum(Income.monto).label('revenue')
         ).join(
@@ -20,19 +20,34 @@ def get_daily_revenue():
         ).filter(
             Income.estado_pago == 'confirmado',
             Booking.check_in >= (datetime.now() - timedelta(days=30))
-        ).group_by(
-            func.strftime('%Y-%m-%d', Booking.check_in)
-        ).order_by(
-            'date'
-        ).all()
-
+        ).group_by('date')
+        
+        archive_revenue = db.session.query(
+            func.strftime('%Y-%m-%d', Archivo.check_in).label('date'),
+            func.sum(Income.monto).label('revenue')
+        ).join(
+            Income, Income.archive_id == Archivo.id
+        ).filter(
+            Income.estado_pago == 'confirmado',
+            Archivo.check_in >= (datetime.now() - timedelta(days=30))
+        ).group_by('date')
+        
+        # Combinar resultados
+        revenue_data = booking_revenue.union(archive_revenue).all()
+        
+        # Procesar para sumar por fecha
+        revenue_by_date = {}
+        for date, revenue in revenue_data:
+            revenue_by_date[date] = revenue_by_date.get(date, 0) + (float(revenue) if revenue else 0.0)
+        
         result = [{
             "time": date,
-            "revenue": float(revenue) if revenue else 0.0
-        } for date, revenue in revenue_data]
-
+            "revenue": amount
+        } for date, amount in revenue_by_date.items()]
+        
+        result.sort(key=lambda x: x['time'])
+        
         return jsonify(result)
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -40,14 +55,15 @@ def get_daily_revenue():
 @jwt_required()
 def get_daily_clients():
     try:
-        # Consulta de clientes diarios usando check_in
+        # Consulta de clientes diarios usando fecha_pago de Income
         clients_data = db.session.query(
-            func.strftime('%Y-%m-%d', Booking.check_in).label('date'),
-            func.count(func.distinct(Booking.cliente_id)).label('clients')
+            func.strftime('%Y-%m-%d', Income.fecha_pago).label('date'),
+            func.count(func.distinct(Income.cliente_id)).label('clients')
         ).filter(
-            Booking.check_in >= (datetime.now() - timedelta(days=30))
+            Income.fecha_pago >= (datetime.now() - timedelta(days=30)),
+            Income.estado_pago == 'confirmado'  # Solo pagos confirmados
         ).group_by(
-            func.strftime('%Y-%m-%d', Booking.check_in)
+            func.strftime('%Y-%m-%d', Income.fecha_pago)
         ).order_by(
             'date'
         ).all()
@@ -67,7 +83,7 @@ def get_daily_clients():
 def get_monthly_revenue():
     try:
         # Consulta para ingresos mensuales (últimos 12 meses)
-        monthly_data = db.session.query(
+        booking_revenue = db.session.query(
             func.strftime('%Y-%m', Booking.check_in).label('month'),
             func.sum(Income.monto).label('revenue')
         ).join(
@@ -75,19 +91,35 @@ def get_monthly_revenue():
         ).filter(
             Income.estado_pago == 'confirmado',
             Booking.check_in >= (datetime.now() - timedelta(days=365))
-        ).group_by(
-            func.strftime('%Y-%m', Booking.check_in)
-        ).order_by(
-            'month'
-        ).all()
-
-        # Formatear para Lightweight Charts (gráfico de barras)
+        ).group_by('month')
+        
+        archive_revenue = db.session.query(
+            func.strftime('%Y-%m', Archivo.check_in).label('month'),
+            func.sum(Income.monto).label('revenue')
+        ).join(
+            Income, Income.archive_id == Archivo.id
+        ).filter(
+            Income.estado_pago == 'confirmado',
+            Archivo.check_in >= (datetime.now() - timedelta(days=365))
+        ).group_by('month')
+        
+        # Combinar resultados
+        revenue_data = booking_revenue.union(archive_revenue).all()
+        
+        # Procesar para sumar por mes
+        revenue_by_month = {}
+        for month, revenue in revenue_data:
+            revenue_by_month[month] = revenue_by_month.get(month, 0) + (float(revenue) if revenue else 0.0)
+        
+        # Formatear para Lightweight Charts
         result = [{
-            "time": f"{month}-01",  # Lightweight Charts necesita día completo
-            "value": float(revenue) if revenue else 0.0,
-            "color": "#4CAF50"  # Color verde para las barras
-        } for month, revenue in monthly_data]
-
+            "time": f"{month}-01",
+            "value": amount,
+            "color": "#4CAF50"
+        } for month, amount in revenue_by_month.items()]
+        
+        result.sort(key=lambda x: x['time'])
+        
         return jsonify(result)
 
     except Exception as e:
@@ -97,40 +129,93 @@ def get_monthly_revenue():
 @jwt_required()
 def get_current_month_payments():
     try:
-        # Obtener el primer día del mes actual
         today = datetime.now()
         first_day_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
-        # Consulta para tarjeta
-        card_payments = db.session.query(
-            func.sum(Income.monto).label('total')
+        # Consulta para todos los métodos de pago
+        payments_data = db.session.query(
+            Income.metodo_pago,
+            func.sum(Income.monto).label('total'),
+            func.count(Income.id).label('count')
         ).filter(
-            Income.metodo_pago.ilike('%tarjeta%'),
             Income.fecha_pago >= first_day_of_month,
             Income.estado_pago == 'confirmado'
-        ).scalar() or 0.0
+        ).group_by(
+            Income.metodo_pago
+        ).all()
         
-        # Consulta para efectivo
-        cash_payments = db.session.query(
-            func.sum(Income.monto).label('total')
-        ).filter(
-            Income.metodo_pago.ilike('%efectivo%'),
-            Income.fecha_pago >= first_day_of_month,
-            Income.estado_pago == 'confirmado'
-        ).scalar() or 0.0
+        # Procesar resultados
+        payment_methods = {}
+        total = 0.0
+        total_transactions = 0
         
-        # Formatear respuesta
-        result = {
+        for metodo, monto, count in payments_data:
+            key = metodo.lower()
+            payment_methods[key] = {
+                "amount": float(monto) if monto else 0.0,
+                "count": int(count) if count else 0
+            }
+            total += float(monto) if monto else 0.0
+            total_transactions += int(count) if count else 0
+        
+        return jsonify({
             "month": today.strftime("%Y-%m"),
-            "payment_methods": {
-                "tarjeta": float(card_payments),
-                "efectivo": float(cash_payments)
-            },
-            "total": float(card_payments + cash_payments)
-        }
-        
-        return jsonify(result)
+            "payment_methods": payment_methods,
+            "total": total,
+            "total_transactions": total_transactions,
+            "currency": "USD"
+        })
     
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@stats_bp.route("/api/stats/quick-stats", methods=["GET"])
+@jwt_required()
+def get_quick_stats():
+    try:
+        today = datetime.now()
+        first_day_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        today_start = today.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # 1. Ingresos este mes
+        monthly_revenue = db.session.query(
+            func.sum(Income.monto)
+        ).filter(
+            Income.fecha_pago >= first_day_of_month,
+            Income.estado_pago == 'confirmado'
+        ).scalar() or 0.0
+        
+        # 2. Clientes este mes (únicos)
+        monthly_clients = db.session.query(
+            func.count(func.distinct(Booking.cliente_id))
+        ).filter(
+            Booking.check_in >= first_day_of_month
+        ).scalar() or 0
+        
+        # 3. Ocupación actual
+        total_rooms = db.session.query(func.count(Room.id)).scalar() or 1  # Evitar división por cero
+        occupied_rooms = db.session.query(func.count(Room.id)).filter(
+            Room.disponibilidad != "Disponible"
+        ).scalar() or 0
+        occupancy_percentage = (occupied_rooms / total_rooms) * 100
+        
+        # 4. Pagos hoy
+        today_payments = db.session.query(
+            func.count(Income.id)
+        ).filter(
+            Income.fecha_pago >= today_start,
+            Income.estado_pago == 'confirmado'
+        ).scalar() or 0
+        
+        return jsonify({
+            "monthly_revenue": float(monthly_revenue),
+            "monthly_clients": int(monthly_clients),
+            "occupancy_percentage": round(float(occupancy_percentage), 2),
+            "today_payments": int(today_payments),
+            "last_updated": today.isoformat(),
+            "currency": "USD"
+        })
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
@@ -197,23 +282,26 @@ def get_top_spenders():
 @jwt_required()
 def get_current_occupancy():
     try:
-        # Consulta para contar habitaciones totales
-        total_rooms = db.session.query(func.count(Room.id)).scalar()
-        
-        # Consulta para contar habitaciones ocupadas (no disponibles)
+        total_rooms = db.session.query(func.count(Room.id)).scalar() or 1
         occupied_rooms = db.session.query(func.count(Room.id)).filter(
             Room.disponibilidad != "Disponible"
-        ).scalar()
+        ).scalar() or 0
         
-        # Calcular porcentaje
-        occupancy_percentage = (occupied_rooms / total_rooms) * 100 if total_rooms > 0 else 0.0
+        # Asegurar que el porcentaje no sea None
+        occupancy_percentage = round((occupied_rooms / total_rooms) * 100, 2) if total_rooms > 0 else 0.0
         
         return jsonify({
             "total_habitaciones": total_rooms,
             "habitaciones_ocupadas": occupied_rooms,
-            "porcentaje_ocupacion": round(occupancy_percentage, 2),
+            "porcentaje_ocupacion": occupancy_percentage,
             "unidad": "porcentaje"
         })
     
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "total_habitaciones": 1,
+            "habitaciones_ocupadas": 0,
+            "porcentaje_ocupacion": 0.0,
+            "unidad": "porcentaje",
+            "error": str(e)
+        }), 500
