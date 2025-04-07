@@ -185,11 +185,12 @@ def get_quick_stats():
             Income.estado_pago == 'confirmado'
         ).scalar() or 0.0
         
-        # 2. Clientes este mes (únicos)
+        # 2. Clientes este mes (únicos) - BASADO EN PAGOS CONFIRMADOS
         monthly_clients = db.session.query(
-            func.count(func.distinct(Booking.cliente_id))
+            func.count(func.distinct(Income.cliente_id))
         ).filter(
-            Booking.check_in >= first_day_of_month
+            Income.fecha_pago >= first_day_of_month,
+            Income.estado_pago == 'confirmado'
         ).scalar() or 0
         
         # 3. Ocupación actual
