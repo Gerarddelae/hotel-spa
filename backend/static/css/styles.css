@@ -330,7 +330,7 @@ th, td {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     background-color: var(--bs-card-bg);
-    height: calc(40vh - 40px);
+    height: calc(45vh - 45px);
     min-height: 100px;
 }
 

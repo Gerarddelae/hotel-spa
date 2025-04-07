@@ -63,7 +63,6 @@ async function loadTableData(path, head, body) {
         if (path === "/api/bookings") {
             data = data.map((item) => {
                 const { cliente_id, habitacion_id, ...filteredItem } = item;
-                console.log(item);
                 // Formatear fechas
                 if (filteredItem.check_in) {
                     filteredItem.check_in = formatDate(filteredItem.check_in);
@@ -71,6 +70,13 @@ async function loadTableData(path, head, body) {
                 if (filteredItem.check_out) {
                     filteredItem.check_out = formatDate(filteredItem.check_out);
                 }
+                if (typeof filteredItem.valor_reservacion === 'number') {
+                  filteredItem.valor_reservacion = '$' + filteredItem.valor_reservacion
+                      .toLocaleString('es-ES', { 
+                          useGrouping: true, 
+                          minimumFractionDigits: 0 
+                      });
+                  }
                 console.log(filteredItem);
                 return filteredItem;
             });
@@ -90,7 +96,14 @@ async function loadTableData(path, head, body) {
                       }
                       if (filteredItem.fecha_archivo) {
                           filteredItem.fecha_archivo = formatDate(filteredItem.fecha_archivo);
-                    }
+                      }
+                      if (typeof filteredItem.valor_reservacion === 'number') {
+                        filteredItem.valor_reservacion = '$' + filteredItem.valor_reservacion
+                            .toLocaleString('es-ES', { 
+                                useGrouping: true, 
+                                minimumFractionDigits: 0 
+                            });
+                        }
       
                       return filteredItem;
                   });
@@ -103,7 +116,15 @@ async function loadTableData(path, head, body) {
     
                     if (filteredItem.fecha_pago) {
                         filteredItem.fecha_pago = formatDate(filteredItem.fecha_pago);
-                  }
+                    }
+
+                    if (typeof filteredItem.monto === 'number') {
+                      filteredItem.monto = '$' + filteredItem.monto
+                          .toLocaleString('es-ES', { 
+                              useGrouping: true, 
+                              minimumFractionDigits: 0 
+                          });
+                      }
     
                     return filteredItem;
                 });
