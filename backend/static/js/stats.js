@@ -1,4 +1,4 @@
-// Script para gráficos persistentes en SPA - Versión corregida
+// Script para gráficos persistentes en SPA - Versión con formato de números
 (function () {
   // Configuración de gráficos por página
   const pageCharts = {
@@ -11,6 +11,19 @@
   let observerInitialized = false;
   let initializationInProgress = false;
   let chartElements = new WeakMap();
+
+  // Función para formatear números con punto como separador de miles
+  function formatNumber(number, decimals = 2) {
+    return number.toLocaleString('es-ES', { 
+      useGrouping: true, 
+      minimumFractionDigits: decimals 
+  })
+  }
+
+  // Función para formatear moneda (manteniendo el símbolo $)
+  function formatCurrency(amount, decimals = 0) {
+    return '$' + formatNumber(amount, decimals);
+  }
 
   // Función para obtener datos de la API con JWT
   async function fetchChartData(endpoint) {
@@ -57,12 +70,10 @@
       const occupancyEl = document.getElementById("current-occupancy-percent");
       const paymentsEl = document.getElementById("today-payments");
 
-      if (revenueEl)
-        revenueEl.textContent = `$${data.monthly_revenue.toFixed(2)}`;
-      if (clientsEl) clientsEl.textContent = data.monthly_clients;
-      if (occupancyEl)
-        occupancyEl.textContent = `${data.occupancy_percentage}%`;
-      if (paymentsEl) paymentsEl.textContent = data.today_payments;
+      if (revenueEl) revenueEl.textContent = formatCurrency(data.monthly_revenue, 0);
+      if (clientsEl) clientsEl.textContent = formatNumber(data.monthly_clients, 0);
+      if (occupancyEl) occupancyEl.textContent = `${formatNumber(data.occupancy_percentage, 0)}%`;
+      if (paymentsEl) paymentsEl.textContent = formatNumber(data.today_payments, 0);
     } catch (error) {
       console.error("Error al actualizar estadísticas rápidas:", error);
     }
@@ -119,6 +130,7 @@
         title: "Clientes por Día",
         data: formattedData,
         color: "#0d6efd",
+        priceFormatter: (price) => formatNumber(price, 0)
       });
     },
     "chart-revenue": async function (element) {
@@ -136,6 +148,7 @@
         title: "Ingresos",
         data: formattedData,
         color: "#4e73df",
+        priceFormatter: (price) => formatCurrency(price)
       });
     },
     "chart-occupancy": async function (element) {
@@ -172,7 +185,19 @@
                 color: getComputedStyle(document.body).color,
               },
             },
-          },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.label || '';
+                  if (label) label += ': ';
+                  if (context.parsed !== undefined) {
+                    label += formatNumber(context.parsed, 0);
+                  }
+                  return label;
+                }
+              }
+            }
+          }
         },
       });
     },
@@ -192,7 +217,7 @@
         title: "Ingresos Diarios",
         data: formattedData,
         color: "#28a745",
-        priceFormatter: (price) => `$${price.toFixed(2)}`,
+        priceFormatter: (price) => formatCurrency(price)
       });
     },
     "chart-revenue-monthly": async function (element) {
@@ -205,7 +230,7 @@
         title: "Ingresos Mensuales",
         data: data,
         color: "#17a2b8",
-        priceFormatter: (price) => `$${price.toFixed(0)}`,
+        priceFormatter: (price) => formatCurrency(price, 0)
       });
     },
     "chart-payments": async function (element) {
@@ -263,7 +288,7 @@
                   const value = context.raw || 0;
                   const total = context.dataset.data.reduce((a, b) => a + b, 0);
                   const percentage = Math.round((value / total) * 100);
-                  return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                  return `${label}: ${formatCurrency(value)} (${percentage}%)`;
                 },
               },
             },
@@ -311,6 +336,13 @@
         autoSize: true,
         height: 300,
         width: element.clientWidth,
+        localization: {
+          priceFormatter: (price) => {
+            return config.priceFormatter ? 
+              config.priceFormatter(price) : 
+              formatNumber(price);
+          }
+        }
       });
 
       let series;
@@ -322,7 +354,7 @@
             crosshairMarkerVisible: true,
             priceFormat: {
               type: "custom",
-              formatter: config.priceFormatter || ((price) => price.toFixed(2)),
+              formatter: config.priceFormatter || ((price) => formatNumber(price)),
             },
           });
           break;
@@ -331,13 +363,21 @@
             color: config.color,
             priceFormat: {
               type: "custom",
-              formatter: config.priceFormatter || ((price) => price.toFixed(2)),
+              formatter: config.priceFormatter || ((price) => {
+                return price % 1 === 0 ? formatNumber(price, 0) : formatNumber(price);
+              }),
             },
             base: 0,
           });
           break;
         default:
-          series = chart.addLineSeries({ color: config.color });
+          series = chart.addLineSeries({ 
+            color: config.color,
+            priceFormat: {
+              type: "custom",
+              formatter: config.priceFormatter || ((price) => formatNumber(price))
+            }
+          });
       }
 
       series.setData(config.data);
@@ -404,21 +444,52 @@
       element.innerHTML = "";
       const ctx = element.getContext("2d");
 
+      // Configuración base con formato de números
+      const defaultOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "right",
+            labels: {
+              color: getComputedStyle(document.body).color,
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) label += ': ';
+                if (context.parsed.y !== undefined) {
+                  label += formatNumber(context.parsed.y);
+                } else if (context.parsed !== undefined) {
+                  label += formatNumber(context.parsed);
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            ticks: {
+              callback: function(value) {
+                return formatNumber(value);
+              }
+            }
+          }
+        }
+      };
+
+      // Combinar con opciones personalizadas si existen
+      const mergedOptions = config.options ? 
+        deepMerge(defaultOptions, config.options) : 
+        defaultOptions;
+
       const chart = new Chart(ctx, {
         type: config.type,
         data: config.data,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: "right",
-              labels: {
-                color: getComputedStyle(document.body).color,
-              },
-            },
-          },
-        },
+        options: mergedOptions
       });
 
       chartInstances[config.id] = chart;
@@ -432,6 +503,22 @@
     } finally {
       initializationInProgress = false;
     }
+  }
+
+  // Función auxiliar para combinar objetos profundamente
+  function deepMerge(target, source) {
+    const output = Object.assign({}, target);
+    if (typeof target !== 'object' || typeof source !== 'object') {
+      return source;
+    }
+    Object.keys(source).forEach(key => {
+      if (source[key] instanceof Object && key in target) {
+        output[key] = deepMerge(target[key], source[key]);
+      } else {
+        output[key] = source[key];
+      }
+    });
+    return output;
   }
 
   function darkModeHandler() {
