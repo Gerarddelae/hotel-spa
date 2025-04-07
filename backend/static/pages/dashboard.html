@@ -28,12 +28,32 @@
             </div>
     
             <div class="container">
-                <div class="row justify-content-around">
+                <div class="row justify-content-center">
                     <!-- Columna izquierda -->
                     <div class="col-md-6">
-                        <p>Aquí van las gráficas</p>
+                        <!-- Gráfico de Clientes -->
+                        <div class="card dashboard small-card mb-3"> <!-- Agregué mb-3 para margen inferior -->
+                            <div class="card-header bg-primary">
+                                Clientes por Día (Últimos 30 días)
+                            </div>
+                            <div class="card-body">
+                                <div id="chart-clients" class="chart-container"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico de Ocupación Actual -->
+                        <div class="card dashboard small-card">
+                            <div class="card-header bg-warning">
+                                Ocupación Actual
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="chart-occupancy"></canvas>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-
+    
                     <!-- Columna derecha -->
                     <div class="col-md-6">
                         <div class="reservas-container">

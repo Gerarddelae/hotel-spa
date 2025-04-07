@@ -92,8 +92,9 @@ document.addEventListener("DOMContentLoaded", async function () {
                 const contentContainer = document.getElementById("content");
                 if (contentContainer) {
                     contentContainer.innerHTML = data;
+                    
                     console.log("🎯 Contenido insertado correctamente en #content");
-
+               
                     if (page === "booking") {
                         console.log("🔄 Cargando página de reservas...");
                         // Aumentar el tiempo de espera para asegurar que el DOM esté listo

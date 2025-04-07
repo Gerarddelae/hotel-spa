@@ -1,8 +1,12 @@
-<h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="40" stroke-width="2">
+<h1>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="40" stroke-width="2">
     <path d="M7 9m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z"></path>
     <path d="M14 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
     <path d="M17 9v-2a2 2 0 0 0 -2 -2h-10a2 2 0 0 0 -2 2v6a2 2 0 0 0 2 2h2"></path>
-  </svg> Cashier</h1>
+  </svg> 
+  Cashier
+</h1>
+
 <ul class="nav nav-tabs" id="cashierTab" role="tablist">
   <li class="nav-item" role="presentation">
     <button
@@ -15,7 +19,7 @@
       aria-controls="dashboard-pane"
       aria-selected="true"
     >
-      Dashboard
+      Graphs
     </button>
   </li>
   <li class="nav-item" role="presentation">
@@ -38,7 +42,7 @@
 </ul>
 
 <div class="tab-content" id="cashierTabContent">
-  <!-- Panel del Dashboard (vacío para gráficas) -->
+  <!-- Panel del Dashboard -->
   <div
     class="tab-pane fade show active"
     id="dashboard-pane"
@@ -46,21 +50,81 @@
     aria-labelledby="dashboard-tab"
     tabindex="0"
   >
-    <div class="container mt-4">
+    <div class="container-fluid mt-4">
       <div class="row">
-        <div class="col-md-12">
-          <div class="card shadow">
-            <div class="card-header">
-              <h5 class="mb-0">Financial Overview</h5>
+        <!-- Primera fila: Estadísticas rápidas y gráfico de métodos de pago -->
+        <div class="col-md-6 mb-4">
+          <div class="card shadow h-100">
+            <div class="card-header bg-success">
+              <h5 class="mb-0 text-white">Estadísticas Rápidas</h5>
             </div>
             <div class="card-body">
-              <!-- Espacio reservado para gráficas -->
-              <div id="chartsContainer" class="text-center py-5">
-                <p class="text-muted">Dashboard charts will be displayed here</p>
+              <div class="d-flex flex-column h-100 justify-content-around">
+                <div class="d-flex justify-content-between align-items-center py-2">
+                  <span>Ingresos este mes:</span>
+                  <strong id="current-month-revenue">$0.00</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                  <span>Clientes este mes:</span>
+                  <strong id="current-month-clients">0</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                  <span>Ocupación actual:</span>
+                  <strong id="current-occupancy-percent">0%</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                  <span>Pagos hoy:</span>
+                  <strong id="today-payments">0</strong>
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        <div class="col-md-6 mb-4">
+          <div class="card shadow h-100">
+            <div class="card-header bg-primary">
+              <h5 class="mb-0 text-white">Métodos de Pago (Este Mes)</h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 250px;">
+                <canvas id="chart-payments"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Segunda fila: Gráficos de ingresos -->
+      <div class="row">
+        <!-- Ingresos Diarios (Gráfico de Líneas) -->
+        <div class="col-md-6 mb-4">
+          <div class="card shadow h-100">
+            <div class="card-header bg-success">
+              <h5 class="mb-0 text-white">Ingresos Diarios (Últimos 30 días)</h5>
+            </div>
+            <div class="card-body">
+              <div id="chart-revenue-daily" class="chart-container" style="height: 300px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ingresos Mensuales (Gráfico de Barras) -->
+        <div class="col-md-6 mb-4">
+          <div class="card shadow h-100">
+            <div class="card-header bg-info">
+              <h5 class="mb-0 text-white">Ingresos Mensuales (Últimos 12 meses)</h5>
+            </div>
+            <div class="card-body">
+              <div id="chart-revenue-monthly" class="chart-container" style="height: 300px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tercera fila: Gráficos adicionales si es necesario -->
+      <div class="row">
+
       </div>
     </div>
   </div>
@@ -116,4 +180,3 @@
     </div>
   </div>
 </div>
-

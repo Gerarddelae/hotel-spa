@@ -127,7 +127,6 @@ function setupDashboardButton() {
 
     dashboardButton.addEventListener('click', function(e) {
         e.preventDefault();
-        
         // Mostrar spinner de carga
         const originalContent = dashboardButton.innerHTML;
         dashboardButton.innerHTML = `
