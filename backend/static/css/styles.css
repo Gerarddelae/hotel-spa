@@ -297,10 +297,7 @@ th, td {
   pointer-events: none !important;
 }
 
-/* Ocultar input de búsqueda en selects únicos */
-.choices[data-type*="select-one"] .choices__input {
-  display: none !important;
-}
+
 
 .dashboard-container {
     display: grid;
