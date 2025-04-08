@@ -3,8 +3,9 @@
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestArgs": [
-        "tests"
+        "backend"
     ],
     "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/Scripts/python.exe",
-    "CodeGPT.apiKey": "LM Studio"
+    "CodeGPT.apiKey": "LM Studio",
+    "trae.testing.testPath": "backend"
 }
