@@ -83,24 +83,23 @@ def get_daily_clients():
 def get_monthly_revenue():
     try:
         # Consulta para ingresos mensuales (últimos 12 meses)
+        # Usando fecha_pago en lugar de check_in para reflejar cuando se recibió el pago
         booking_revenue = db.session.query(
-            func.strftime('%Y-%m', Booking.check_in).label('month'),
+            func.strftime('%Y-%m', Income.fecha_pago).label('month'),
             func.sum(Income.monto).label('revenue')
-        ).join(
-            Income, Income.booking_id == Booking.id
         ).filter(
+            Income.booking_id.isnot(None),
             Income.estado_pago == 'confirmado',
-            Booking.check_in >= (datetime.now() - timedelta(days=365))
+            Income.fecha_pago >= (datetime.now() - timedelta(days=365))
         ).group_by('month')
         
         archive_revenue = db.session.query(
-            func.strftime('%Y-%m', Archivo.check_in).label('month'),
+            func.strftime('%Y-%m', Income.fecha_pago).label('month'),
             func.sum(Income.monto).label('revenue')
-        ).join(
-            Income, Income.archive_id == Archivo.id
         ).filter(
+            Income.archive_id.isnot(None),
             Income.estado_pago == 'confirmado',
-            Archivo.check_in >= (datetime.now() - timedelta(days=365))
+            Income.fecha_pago >= (datetime.now() - timedelta(days=365))
         ).group_by('month')
         
         # Combinar resultados
