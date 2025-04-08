@@ -65,6 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         console.log("✅ Respuesta del servidor:", result);
 
                         if (response.ok) {
+                            console.log(method);
                             form.reset();
                             mostrarToast(method === "PUT" ? "update" : 
                                          method === "DELETE" ? "error" : "success");

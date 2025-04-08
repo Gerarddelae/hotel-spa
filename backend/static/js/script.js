@@ -63,6 +63,12 @@ document.addEventListener("DOMContentLoaded", async function () {
             link.addEventListener("click", function (event) {
                 event.preventDefault();
                 const newPage = this.getAttribute("aria-current").replace("#", "");
+                
+                // Limpiar servicios si estamos cambiando de página room
+                if (window.cleanupRoomServices && newPage !== "room") {
+                    window.cleanupRoomServices();
+                }
+                
                 setActiveLink(newPage);
                 loadPage(newPage);
             });
@@ -84,6 +90,11 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     function loadPage(page, isInitialLoad = false) {
+        // Limpiar servicios si estamos cambiando de página (excepto cuando vamos a room)
+        if (window.cleanupRoomServices && page !== "room") {
+            window.cleanupRoomServices();
+        }
+
         fetch(`/static/pages/${page}.html`)
             .then(response => response.text())
             .then(data => {
@@ -95,25 +106,32 @@ document.addEventListener("DOMContentLoaded", async function () {
                     
                     console.log("🎯 Contenido insertado correctamente en #content");
                
-                    if (page === "booking") {
-                        console.log("🔄 Cargando página de reservas...");
-                        // Aumentar el tiempo de espera para asegurar que el DOM esté listo
-                        setTimeout(() => {
-                            if (typeof window.cargarClientesYHabitaciones === "function") {
-                                window.cargarClientesYHabitaciones();
-                                console.log("✅ Clientes y habitaciones cargados.");
-                            } else {
-                                console.error("❌ La función cargarClientesYHabitaciones no está disponible en window.");
-                            }
-                    
-                            if (typeof window.inicializarFormulario === "function") {
-                                window.inicializarFormulario();
-                                console.log("✅ Formulario inicializado correctamente.");
-                            } else {
-                                console.error("❌ La función inicializarFormulario no está disponible en window.");
-                            }
-                        }, 800); // Aumentado a 800ms
-                    }
+                    // Inicialización específica para cada página
+                    setTimeout(() => {
+                        switch(page) {
+                            case "booking":
+                                if (typeof window.cargarClientesYHabitaciones === "function") {
+                                    window.cargarClientesYHabitaciones();
+                                    console.log("✅ Clientes y habitaciones cargados.");
+                                }
+                                if (typeof window.inicializarFormulario === "function") {
+                                    window.inicializarFormulario();
+                                    console.log("✅ Formulario inicializado correctamente.");
+                                }
+                                break;
+                            
+                            case "room":
+                                if (typeof window.initRoomServices === "function") {
+                                    window.initRoomServices();
+                                    console.log("✅ Servicios de habitación inicializados.");
+                                }
+                                break;
+                            
+                            default:
+                                // No se requiere inicialización especial para otras páginas
+                                break;
+                        }
+                    }, 1000);
                 } else {
                     console.error("❌ No se encontró el contenedor #content");
                 }
@@ -128,23 +146,36 @@ document.addEventListener("DOMContentLoaded", async function () {
             })
             .catch(err => console.error(`❌ Error al cargar ${page}.html:`, err));
     }
-    
-    
 
     function logoutSetup() {
         const outButton = document.getElementById("logout");
         if (outButton) {
             outButton.addEventListener("click", function () {
+                // Limpiar servicios antes de salir
+                if (window.cleanupRoomServices) {
+                    window.cleanupRoomServices();
+                }
                 localStorage.clear();
-                window.location.href = "/"; // Redirige a login
+                window.location.href = "/";
             });
         }
     }
 
     window.addEventListener("popstate", function (event) {
         if (event.state && event.state.page) {
+            // Limpiar servicios si estamos cambiando de página room
+            if (window.cleanupRoomServices && event.state.page !== "room") {
+                window.cleanupRoomServices();
+            }
             loadPage(event.state.page, true);
             setActiveLink(event.state.page);
+        }
+    });
+
+    // Limpiar al cerrar la pestaña/ventana
+    window.addEventListener("beforeunload", function() {
+        if (window.cleanupRoomServices) {
+            window.cleanupRoomServices();
         }
     });
 });

@@ -286,8 +286,12 @@ async function deleteRow(button) {
   const id = button.dataset.id;
   const path = button.dataset.path;
   const token = localStorage.getItem("access_token");
-  
-  if (!confirm(`¿Eliminar reserva #${id}? Se archivará automáticamente.`)) return;
+  console.log(path);
+  if (path === "/api/bookings") {
+    if (!confirm(`¿Eliminar reserva #${id}? Se archivará automáticamente.`)) return;
+  } else {
+    if (!confirm(`¿Eliminar registro #${id}?`)) return;
+  }
 
   try {
       // Mostrar estado de carga
@@ -316,11 +320,11 @@ async function deleteRow(button) {
       });
 
       // Mostrar notificación
-      mostrarToast("success", `Reserva #${id} archivada y eliminada`);
+      window.mostrarToast("error", `Registro #${id} eliminado`);
 
   } catch (error) {
       console.error("Delete error:", error);
-      mostrarToast("error", error.message || "Error interno del servidor");
+      window.mostrarToast("error", error.message || "Error interno del servidor");
       
       // Recargar tabla si es error 500
       if (error.message.includes("500")) {
@@ -879,7 +883,7 @@ async function prepareBookingModalForEdit(booking, form) {
   } catch (error) {
     console.error("Error al preparar el formulario:", error);
     if (typeof mostrarToast === 'function') {
-      mostrarToast("error", "Error al cargar datos para edición");
+      window.mostrarToast("error", "Error al cargar datos para edición");
     }
   }
 }

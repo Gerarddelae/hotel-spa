@@ -42,29 +42,46 @@ def create_test_client(client, admin_token, client_data):
 
 def test_create_client(client, admin_token, client_data):
     """Test para crear un nuevo cliente."""
+    # 1. Crear el cliente
     response = client.post(
         '/api/clients',
         headers={'Authorization': f'Bearer {admin_token}'},
-        data=json.dumps(client_data),
-        content_type='application/json'
+        json=client_data  # Cambiado a json= para mejor manejo de headers
     )
     
     assert response.status_code == 201
-    data = json.loads(response.data)
+    data = response.get_json()
     assert 'message' in data
-    assert 'exitosamente' in data['message'].lower()
+    assert 'creado' in data['message'].lower()
     
-    # Verificar que el cliente fue creado
+    # 2. Verificar que el cliente fue creado y es visible
     clients_response = client.get(
         '/api/clients',
         headers={'Authorization': f'Bearer {admin_token}'}
     )
-    clients = json.loads(clients_response.data)
+    assert clients_response.status_code == 200
     
-    created_client = next((c for c in clients if c['email'] == client_data['email']), None)
-    assert created_client is not None
+    clients = clients_response.get_json()
+    created_client = next(
+        (c for c in clients 
+         if c['email'] == client_data['email'] and 'is_deleted' not in c),
+        None
+    )
+    
+    # 3. Aserciones
+    assert created_client is not None, "El cliente no aparece en la lista"
     assert created_client['nombre'] == client_data['nombre']
     assert created_client['documento'] == client_data['documento']
+    
+    # 4. Verificación adicional con GET individual
+    client_id = created_client['id']
+    single_response = client.get(
+        f'/api/clients/{client_id}',
+        headers={'Authorization': f'Bearer {admin_token}'}
+    )
+    assert single_response.status_code == 200
+    single_data = single_response.get_json()
+    assert single_data['email'] == client_data['email']
 
 def test_create_client_duplicate_email(client, admin_token, create_test_client, client_data):
     """Test para verificar que no se puede crear un cliente con email duplicado."""
