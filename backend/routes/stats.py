@@ -193,9 +193,12 @@ def get_quick_stats():
         ).scalar() or 0
         
         # 3. Ocupación actual
-        total_rooms = db.session.query(func.count(Room.id)).scalar() or 1  # Evitar división por cero
+        total_rooms = db.session.query(func.count(Room.id)).filter(
+            Room.is_deleted == False
+        ).scalar() or 1  # Evitar división por cero
         occupied_rooms = db.session.query(func.count(Room.id)).filter(
-            Room.disponibilidad != "Disponible"
+            Room.disponibilidad != "Disponible",
+            Room.is_deleted == False
         ).scalar() or 0
         occupancy_percentage = (occupied_rooms / total_rooms) * 100
         
@@ -282,9 +285,12 @@ def get_top_spenders():
 @jwt_required()
 def get_current_occupancy():
     try:
-        total_rooms = db.session.query(func.count(Room.id)).scalar() or 1
+        total_rooms = db.session.query(func.count(Room.id)).filter(
+            Room.is_deleted == False
+        ).scalar() or 1
         occupied_rooms = db.session.query(func.count(Room.id)).filter(
-            Room.disponibilidad != "Disponible"
+            Room.disponibilidad != "Disponible",
+            Room.is_deleted == False
         ).scalar() or 0
         
         # Asegurar que el porcentaje no sea None
