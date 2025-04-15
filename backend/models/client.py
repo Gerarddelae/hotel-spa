@@ -9,3 +9,4 @@ class Client(db.Model):
     fecha_nacimiento = db.Column(db.String(10), nullable=False)
     preferencias = db.Column(db.String(255), nullable=True)
     comentarios = db.Column(db.Text, nullable=True)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)

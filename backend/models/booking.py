@@ -13,6 +13,7 @@ class Booking(db.Model):
     estado = db.Column(db.String(20), nullable=False)
     notas = db.Column(db.Text, nullable=True)
     valor_reservacion = db.Column(db.Float, nullable=False, default=0.0)
+    notificado = db.Column(db.Boolean, default=False)
 
     cliente = db.relationship("Client", backref="bookings")
     habitacion = db.relationship("Room", backref="bookings")

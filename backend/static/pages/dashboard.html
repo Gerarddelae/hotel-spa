@@ -1,4 +1,71 @@
-<h1>🏠 Inicio</h1>
-<p>Bienvenido aqui se mostrara informacion general sobre el hotel.</p>
-<p>Tal como el numero de habitaciones ocupadas y otras estadisticas de interes.</p>
+    <!-- Modal de Notificación General -->
+    <div class="modal fade" id="notificationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content modal-notification">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notificationModalTitle">Notificación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="notificationModalBody">
+                    Mensaje de notificación...
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <h1 class="mb-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="40" stroke-width="2"> <path d="M5 12l-2 0l9 -9l9 9l-2 0"></path> <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"></path> <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"></path> </svg> 
+ 
+        Dashboard</h1>
+    <div class="container mr-1">
+        <div class="d-flex justify-content-between">
+            <!-- Notificaciones Toast -->
+            <div class="toast-container position-fixed top-0 end-0 p-3"></div>
+            <div class="position-fixed top-0 end-0 p-3" id="notificacionBadge" style="display: none;">
+                <span class="badge bg-danger">Nuevas alertas</span>
+            </div>
+    
+            <div class="container">
+                <div class="row justify-content-center">
+                    <!-- Columna izquierda -->
+                    <div class="col-md-6">
+                        <!-- Gráfico de Clientes -->
+                        <div class="card dashboard small-card mb-3"> <!-- Agregué mb-3 para margen inferior -->
+                            <div class="card-header bg-primary">
+                                <h5 class="mb-0 text-white">Clientes por Día (Últimos 30 días)</h5>           
+                            </div>
+                            <div class="card-body">
+                                <div id="chart-clients" class="chart-container"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico de Ocupación Actual -->
+                        <div class="card dashboard small-card">
+                            <div class="card-header bg-warning">
+                                <h5 class="mb-0 text-white">Ocupación Actual</h5> <!-- Cambié el color de fondo a bg-warning -->
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="chart-occupancy" style="height: 250px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <!-- Columna derecha -->
+                    <div class="col-md-6">
+                        <div class="reservas-container">
+                            <!-- Reservas Registradas -->
+                            <div class="card shadow-sm p-4">
+                                <h2 class="mb-3">Reservas Registradas</h2>
+                                <ul id="listaReservas" class="list-group"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 

@@ -1,13 +1,24 @@
 document.addEventListener("DOMContentLoaded", () => {
   const tabObserver = new MutationObserver((mutationsList, observer) => {
     const tabs = document.querySelectorAll(".nav-link.search");
-    tabs.forEach((button) => {
+    tabs.forEach((button) => {     
       if (!button.hasEventListener) {
+        if (button.classList.contains("active")) { // Si el tab ya está activo
+          const { path, head, body } = button.dataset;
+          if (path && head && body) {
+            //applyTableHeaderTheme(head); // Aplicar tema al encabezado
+            loadTableData(path, head, body);
+          }
+        }
         button.addEventListener("click", (event) => {
           const { path, head, body } = event.target.dataset;
           console.log(path);
           console.log(head);
           if (path && head && body) {
+            // Destruir tabla existente antes de cargar
+            if ($(`#${body}`).data('bootstrap.table')) {
+              $(`#${body}`).bootstrapTable('destroy');
+            }
             loadTableData(path, head, body);
           } else {
             console.error("Faltan atributos en el botón:", event.target);
@@ -52,7 +63,6 @@ async function loadTableData(path, head, body) {
         if (path === "/api/bookings") {
             data = data.map((item) => {
                 const { cliente_id, habitacion_id, ...filteredItem } = item;
-
                 // Formatear fechas
                 if (filteredItem.check_in) {
                     filteredItem.check_in = formatDate(filteredItem.check_in);
@@ -60,17 +70,70 @@ async function loadTableData(path, head, body) {
                 if (filteredItem.check_out) {
                     filteredItem.check_out = formatDate(filteredItem.check_out);
                 }
-
+                if (typeof filteredItem.valor_reservacion === 'number') {
+                  filteredItem.valor_reservacion = '$' + filteredItem.valor_reservacion
+                      .toLocaleString('es-ES', { 
+                          useGrouping: true, 
+                          minimumFractionDigits: 0 
+                      });
+                  }
+                console.log(filteredItem);
                 return filteredItem;
             });
         }
 
+                // Filtrar y formatear datos para la ruta de archivo
+                if (path === "/api/archives") {
+                  data = data.map((item) => {
+                      const { booking_id, cliente_id, habitacion_id, tipo_habitacion, notas, ...filteredItem } = item;
+      
+                      // Formatear fechas
+                      if (filteredItem.check_in) {
+                          filteredItem.check_in = formatDate(filteredItem.check_in);
+                      }
+                      if (filteredItem.check_out) {
+                          filteredItem.check_out = formatDate(filteredItem.check_out);
+                      }
+                      if (filteredItem.fecha_archivo) {
+                          filteredItem.fecha_archivo = formatDate(filteredItem.fecha_archivo);
+                      }
+                      if (typeof filteredItem.valor_reservacion === 'number') {
+                        filteredItem.valor_reservacion = '$' + filteredItem.valor_reservacion
+                            .toLocaleString('es-ES', { 
+                                useGrouping: true, 
+                                minimumFractionDigits: 0 
+                            });
+                        }
+      
+                      return filteredItem;
+                  });
+              }
+
+              // Filtrar y formatear datos para la ruta de archivo
+              if (path === "/api/incomes") {
+                data = data.map((item) => {
+                    const { source_id, cliente_id, ...filteredItem } = item;
+    
+                    if (filteredItem.fecha_pago) {
+                        filteredItem.fecha_pago = formatDate(filteredItem.fecha_pago);
+                    }
+
+                    if (typeof filteredItem.monto === 'number') {
+                      filteredItem.monto = '$' + filteredItem.monto
+                          .toLocaleString('es-ES', { 
+                              useGrouping: true, 
+                              minimumFractionDigits: 0 
+                          });
+                      }
+    
+                    return filteredItem;
+                });
+            }
+
         console.log("Generando encabezados para el ID:", head);
-        //ensureTableStructure("bookingTable"); // Asegurar la estructura de la tabla
-        generateTableHeaders(Object.keys(data[0]), head); // Generar encabezados
-        cleanTableContainer(body); // Limpiar el contenido del cuerpo de la tabla
+        //cleanTableContainer(body); // Limpiar el contenido del cuerpo de la tabla
         initializeTable(data, body, path); // Inicializar la tabla
-        console.log(head);
+        //generateTableHeaders(Object.keys(data[0]), head); // Generar encabezados
         applyTableHeaderTheme(head); // Aplicar tema al encabezado
     } catch (error) {
         console.error("Error:", error);
@@ -83,25 +146,18 @@ async function loadTableData(path, head, body) {
 // Función auxiliar para formatear fechas
 function formatDate(isoString) {
   if (!isoString) return "N/A";
-
   try {
-    const date = new Date(isoString);
-    return date.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
+      // Convertir a hora local explícitamente
+      return moment.utc(isoString).format("DD/MM/YYYY HH:mm");
   } catch (error) {
-    console.error("Error formateando fecha:", error);
-    return isoString; // Devolver la cadena original si hay error
+      console.error("Error formateando fecha:", error);
+      return "Fecha inválida";
   }
 }
 
 function generateTableHeaders(headers, head) {
   const tableHead = document.getElementById(head);
+  console.log(tableHead);
   if (!tableHead) throw new Error("No se encontró tableHead");
 
   // Limpiar el contenido del <thead> antes de agregar nuevos encabezados
@@ -126,21 +182,24 @@ function generateTableHeaders(headers, head) {
 function initializeTable(data, jsonBody, jsonUrl) {
   // Destruir la tabla existente si hay una
   $("#" + jsonBody).bootstrapTable("destroy");
-
+  
   // Crear las columnas, manteniendo la columna de acciones
   const columns = Object.keys(data[0]).map((key) => ({
     field: key,
     title: key,
     sortable: true,
   }));
-
+  
+  console.log(jsonBody);
   // Agregar columna de acciones
-  columns.push({
-    field: "actions",
-    title: "Acciones",
-    formatter: (value, row, index) =>
-      actionFormatter(value, row, index, jsonUrl),
-  });
+  if (jsonBody !== "archivesTable" && jsonBody !== "incomesTable") {
+    columns.push({
+      field: "actions",
+      title: "Acciones",
+      formatter: (value, row, index) =>
+        actionFormatter(value, row, index, jsonUrl),
+    });
+  }
 
   // Inicializar la tabla con todas las opciones
   $("#" + jsonBody).bootstrapTable({
@@ -148,6 +207,18 @@ function initializeTable(data, jsonBody, jsonUrl) {
     columns: columns,
     search: true,
     pagination: true,
+    responsive: true,
+    // Configuración de exportación
+    showExport: true,
+    exportTypes: ['json', 'xml', 'csv', 'txt', 'sql', 'excel', 'pdf'],
+    exportOptions: {
+        fileName: jsonBody,
+        ignoreColumn: ['actions'], // Columnas a ignorar en la exportación
+        onCellHtmlData: function(cell, rowIndex, colIndex, htmlData) {
+            // Puedes manipular los datos antes de exportar
+            return htmlData;
+        }
+    },
     showRefresh: true, // Activar el botón de refrescar integrado
     onRefresh: function () {
       // Obtener el tab activo basado en la tabla actual
@@ -212,62 +283,58 @@ function actionFormatter(value, row, index, jsonUrl) {
 }
 
 async function deleteRow(button) {
-  const id = button.getAttribute("data-id");
-  const jsonUrl = button.getAttribute("data-path");
-
-  if (!id || !jsonUrl) {
-    console.error("Faltan datos para eliminar el registro.");
-    return;
-  }
-
+  const id = button.dataset.id;
+  const path = button.dataset.path;
   const token = localStorage.getItem("access_token");
-  if (!token) {
-    alert("No estás autenticado. Inicia sesión.");
-    return;
-  }
-
-  if (
-    !confirm(`¿Estás seguro de que deseas eliminar el registro con ID ${id}?`)
-  ) {
-    return;
+  console.log(path);
+  if (path === "/api/bookings") {
+    if (!confirm(`¿Eliminar reserva #${id}? Se archivará automáticamente.`)) return;
+  } else {
+    if (!confirm(`¿Eliminar registro #${id}?`)) return;
   }
 
   try {
-    const response = await fetch(`${jsonUrl}/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      // Mostrar estado de carga
+      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      button.disabled = true;
 
-    if (!response.ok) {
-      throw new Error(`Error al eliminar: ${response.statusText}`);
-    }
+      const response = await fetch(`${path}/${id}`, {
+          method: "DELETE",
+          headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+          }
+      });
 
-    window.mostrarToast("error"); // 🔴 Mostrar notificación de eliminación
+      const data = await response.json();
 
-    console.log(`Registro con ID ${id} eliminado en ${jsonUrl}`);
-    const table = button.closest("table");
-    if (!table) {
-      console.error("No se encontró la tabla para actualizar.");
-      return;
-    }
+      if (!response.ok) {
+          throw new Error(data.message || "Error al eliminar");
+      }
 
-    const tableId = table.getAttribute("id");
-    if (!tableId) {
-      console.error("No se encontró el ID de la tabla.");
-      return;
-    }
+      // Actualizar tabla
+      const table = $(button).closest('table');
+      table.bootstrapTable('remove', {
+          field: 'id',
+          values: [parseInt(id)]
+      });
 
-    $("#" + tableId).bootstrapTable("remove", {
-      field: "id",
-      values: [parseInt(id)],
-    });
+      // Mostrar notificación
+      window.mostrarToast("error", `Registro #${id} eliminado`);
+
   } catch (error) {
-    console.error("Error eliminando el registro:", error);
-    alert(
-      "No se pudo eliminar el registro. Revisa la consola para más detalles."
-    );
+      console.error("Delete error:", error);
+      window.mostrarToast("error", error.message || "Error interno del servidor");
+      
+      // Recargar tabla si es error 500
+      if (error.message.includes("500")) {
+          const tableId = $(button).closest('table').attr('id');
+          $(`#${tableId}`).bootstrapTable('refresh');
+      }
+  } finally {
+      // Restaurar botón
+      button.innerHTML = '<i class="fas fa-trash"></i>';
+      button.disabled = false;
   }
 }
 
@@ -419,11 +486,12 @@ async function editRow(button) {
             // Formatear las fechas al formato esperado por el servidor (para bookings)
             if (formId === "editBookingForm") {
                 if (updatedData.check_in) {
-                    updatedData.check_in = moment(updatedData.check_in).format("YYYY-MM-DDTHH:mm:ss");
+                    updatedData.check_in = moment.utc(updatedData.check_in).format("YYYY-MM-DDTHH:mm:ss");
                 }
                 if (updatedData.check_out) {
-                    updatedData.check_out = moment(updatedData.check_out).format("YYYY-MM-DDTHH:mm:ss");
+                    updatedData.check_out = moment.utc(updatedData.check_out).format("YYYY-MM-DDTHH:mm:ss");
                 }
+                console.log(updatedData);
             }
 
             try {
@@ -456,13 +524,13 @@ async function editRow(button) {
                     const displayData = {...updatedData};
                     if (formId === "editBookingForm") {
                         if (displayData.check_in) {
-                            displayData.check_in = moment(displayData.check_in).format("DD/MM/YYYY HH:mm");
+                            displayData.check_in = moment.utc(displayData.check_in).format("DD/MM/YYYY HH:mm");
                         }
                         if (displayData.check_out) {
-                            displayData.check_out = moment(displayData.check_out).format("DD/MM/YYYY HH:mm");
+                            displayData.check_out = moment.utc(displayData.check_out).format("DD/MM/YYYY HH:mm");
                         }
                     }
-
+                    
                     // Actualizar la fila en la tabla
                     $(`#${table.id}`).bootstrapTable("updateRow", {
                         index: rowIndex,
@@ -481,38 +549,27 @@ async function editRow(button) {
 }
 
 
-// Función para llenar un formulario normal con datos
+// ================ FUNCIÓN fillFormWithData (CORREGIDA) ================
 function fillFormWithData(record, form) {
-  // Primero llenar todos los campos normales
-  Object.keys(record).forEach((key) => {
-    if (key !== 'amenidades') {
+  // Llenar campos normales
+  Object.keys(record).forEach(key => {
       const input = form.querySelector(`[name="${key}"]`);
-      if (input) input.value = record[key] || '';
-    }
+      if (input && key !== 'amenidades') input.value = record[key] || '';
   });
 
-  // Manejar las amenidades de forma especial
-  const isEditForm = form.id === "editRoomForm";
-  const containerId = isEditForm ? "#roomEditServicesContainer" : "#servicesContainer";
-  const inputId = isEditForm ? "#roomEditAmenitiesInput" : "#amenitiesInput";
-  const countId = isEditForm ? "#roomEditServiceCount" : "#serviceCount";
-
-  // Convertir el string de amenidades a array
-  const amenitiesString = record.amenidades || "";
-  const amenitiesArray = amenitiesString.split(',')
-    .map(item => item.trim())
-    .filter(item => item !== "");
-
-  // Actualizar el array global correspondiente
-  if (isEditForm) {
-    window.editServices = [...amenitiesArray];
-  } else {
-    window.services = [...amenitiesArray];
+  // Lógica específica para formulario de habitaciones
+  if (form.id === "editRoomForm") {
+      const amenitiesString = record.amenidades || "";
+      const amenitiesArray = amenitiesString.split(',').map(item => item.trim()).filter(item => item !== "");
+      renderAmenitiesBadges(
+          amenitiesArray,
+          '#servicesContainer',
+          '#serviceCount',
+          '#amenitiesInput'
+      );
   }
-
-  // Renderizar las badges
-  renderAmenitiesBadges(amenitiesArray, containerId, countId, inputId);
 }
+
 
 function renderAmenitiesBadges(amenitiesArray, containerId, countId, inputId) {
   const container = document.querySelector(containerId);
@@ -571,296 +628,617 @@ function renderAmenitiesBadges(amenitiesArray, containerId, countId, inputId) {
   }
 }
 
-// Función específica para preparar el modal de reservaciones para editar
+
+// ================ FUNCIÓN PRINCIPAL (prepareBookingModalForEdit) ================
 async function prepareBookingModalForEdit(booking, form) {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-        console.error("No se encontró el token de autenticación.");
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    console.error("No se encontró el token de autenticación.");
+    return;
+  }
+
+  // Variables para instancias
+  let choicesInstances = {};
+  let observers = [];
+  let datePickerInstance = null;
+
+  try {
+    // 1. Elementos del formulario
+    const clienteSelect = form.querySelector("#nombreBooking");
+    const habitacionSelect = form.querySelector("#num_habitacion");
+    const dateRangeInput = document.getElementById("datetimerange-input2");
+    const tipoHabitacionInput = form.querySelector("#tipo_habitacion");
+    const precioNocheInput = form.querySelector("#precio_noche");
+    const numHuespedesInput = form.querySelector("#num_huespedes");
+
+    // 2. Función para destruir DateRangePicker existente de manera efectiva
+    const destroyDatePicker = () => {
+      try {
+        // Comprobamos si existe una instancia en el DOM actual
+        const pickerElement = document.querySelector('.daterangepicker');
+        if (pickerElement) {
+          pickerElement.remove();
+        }
+        
+        // Destruimos la instancia JavaScript si existe
+        if (datePickerInstance) {
+          if (typeof datePickerInstance.destroy === 'function') {
+            datePickerInstance.destroy();
+          }
+          datePickerInstance = null;
+          console.log('DateRangePicker anterior destruido correctamente');
+        }
+        
+        // Limpiamos listeners previos
+        if (dateRangeInput) {
+          const newInput = dateRangeInput.cloneNode(true);
+          dateRangeInput.parentNode.replaceChild(newInput, dateRangeInput);
+          return newInput; // Retornamos el nuevo input para usarlo
+        }
+      } catch (error) {
+        console.error("Error al destruir DateRangePicker:", error);
+      }
+      return dateRangeInput;
+    };
+
+    // 3. Función para actualizar detalles de habitación
+    const updateRoomDetails = (roomId) => {
+      const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
+      const hab = habitaciones.find(h => h.id == roomId);
+      
+      if (hab) {
+        tipoHabitacionInput.value = hab.tipo;
+        precioNocheInput.value = hab.precio_noche;
+        numHuespedesInput.max = hab.capacidad;
+        console.log(numHuespedesInput.value);
+        
+        numHuespedesInput.value = numHuespedesInput.max;
+        
+        if (typeof calcularTotalModal === 'function') {
+          calcularTotalModal(form);
+        }
+      }
+    };
+
+    // 4. Configuración de Choices.js
+    const initChoices = () => {
+      // Destruir instancias anteriores si existen
+      if (choicesInstances.nombreBooking) choicesInstances.nombreBooking.destroy();
+      if (choicesInstances.num_habitacion) choicesInstances.num_habitacion.destroy();
+
+      // Selector de clientes
+      choicesInstances.nombreBooking = new Choices(clienteSelect, {
+        removeItemButton: true,
+        searchEnabled: true,
+        shouldSort: true
+      });
+      choicesInstances.nombreBooking.setChoiceByValue(booking.cliente_id?.toString());
+
+      // Selector de habitaciones
+      choicesInstances.num_habitacion = new Choices(habitacionSelect, {
+        removeItemButton: true,
+        searchEnabled: true,
+        shouldSort: false
+      });
+
+      // Event listener para cambios en habitación
+      habitacionSelect.addEventListener('change', (e) => {
+        updateRoomDetails(e.detail.value);
+      });
+
+      choicesInstances.num_habitacion.setChoiceByValue(booking.habitacion_id?.toString());
+    };
+
+    // 5. Cargar datos iniciales
+    const [clientes, habitaciones] = await Promise.all([
+      fetch("/api/clients", { headers: { Authorization: `Bearer ${token}` } }).then(res => res.json()),
+      fetch("/api/rooms", { headers: { Authorization: `Bearer ${token}` } }).then(res => res.json())
+    ]);
+
+    localStorage.setItem("habitaciones", JSON.stringify(habitaciones));
+
+    // 6. Llenar selects
+    clienteSelect.innerHTML = '';
+    clientes.forEach(cliente => {
+      const option = new Option(cliente.nombre, cliente.id);
+      clienteSelect.add(option);
+    });
+
+    habitacionSelect.innerHTML = '';
+    habitaciones.forEach(hab => {
+      const option = new Option(
+        `Habitación ${hab.num_habitacion} (${hab.tipo})`, 
+        hab.id
+      );
+      option.disabled = !(hab.id === booking.habitacion_id) && hab.disponibilidad !== "Disponible";
+      if (hab.id === booking.habitacion_id) {
+        option.selected = true;
+        option.text += " (Actual)";
+      }
+      habitacionSelect.add(option);
+    });
+
+    // 7. Inicializar Choices
+    initChoices();
+
+    // 8. Configurar DateRangePicker (CORREGIDO)
+    // Primero destruimos cualquier instancia anterior y obtenemos un input limpio
+    const cleanDateInput = destroyDatePicker();
+    console.log(booking.check_out);
+    const checkIn = moment(booking.check_in, "ddd, DD MMM YYYY HH:mm:ss GMT");
+    const checkOut = moment(booking.check_out, "ddd, DD MMM YYYY HH:mm:ss GMT");
+    console.log(checkIn, checkOut);
+
+    // Inicializamos nueva instancia
+    datePickerInstance = new DateRangePicker(cleanDateInput, {
+      timePicker: true,
+      alwaysShowCalendars: true,
+      autoApply: true,
+      startDate: checkIn,
+      endDate: checkOut,
+      locale: { 
+        format: "YYYY-MM-DD HH:mm",
+        applyLabel: "Aplicar",
+        cancelLabel: "Cancelar",
+        daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
+        monthNames: [
+          "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+          "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ]
+      },
+      showDropdowns: true,
+      opens: "center"
+    }, function(start, end) {
+      cleanDateInput.value = `${start.format("YYYY-MM-DD HH:mm")} - ${end.format("YYYY-MM-DD HH:mm")}`;
+      form.querySelector("#check_in").value = start.format("YYYY-MM-DDTHH:mm:ss[Z]");
+      form.querySelector("#check_out").value = end.format("YYYY-MM-DDTHH:mm:ss[Z]");
+      console.log(end.format("YYYY-MM-DDTHH:mm:ss[Z]"));
+      if (typeof calcularTotalModal === 'function') {
+        calcularTotalModal(form);
+      }
+    });
+
+    cleanDateInput.value = `${checkIn.local().format("YYYY-MM-DD HH:mm")} - ${checkOut.local().format("YYYY-MM-DD HH:mm")}`;
+    cleanDateInput.setAttribute("readonly", "readonly");
+    
+    // Aseguramos que los campos ocultos tengan los valores correctos
+    form.querySelector("#check_in").value = checkIn.format("YYYY-MM-DDTHH:mm:ss[Z]");
+    form.querySelector("#check_out").value = checkOut.format("YYYY-MM-DDTHH:mm:ss[Z]");
+
+    // 9. Configurar otros campos
+    const habSeleccionada = habitaciones.find(h => h.id == booking.habitacion_id);
+    if (habSeleccionada) {
+      tipoHabitacionInput.value = habSeleccionada.tipo;
+      precioNocheInput.value = habSeleccionada.precio_noche;
+      numHuespedesInput.max = habSeleccionada.capacidad;
+      numHuespedesInput.value = booking.num_huespedes || 1;
+    }
+
+    form.querySelector("#metodo_pago").value = booking.metodo_pago || "Tarjeta";
+    form.querySelector("#estado_reserva").value = booking.estado || "pendiente";
+    form.querySelector("#notas").value = booking.notas || "";
+
+    // 10. Configurar MutationObservers
+    const setupObservers = () => {
+      const observerConfig = {
+        attributes: true,
+        attributeFilter: ['value'],
+        subtree: true
+      };
+
+      const precioObserver = new MutationObserver(() => {
+        if (typeof calcularTotalModal === 'function') {
+          calcularTotalModal(form);
+        }
+      });
+      precioObserver.observe(precioNocheInput, observerConfig);
+
+      const huespedesObserver = new MutationObserver(() => {
+        if (typeof calcularTotalModal === 'function') {
+          calcularTotalModal(form);
+        }
+      });
+      huespedesObserver.observe(numHuespedesInput, observerConfig);
+
+      return [precioObserver, huespedesObserver];
+    };
+
+    observers = setupObservers();
+
+    // 11. Manejar eventos del modal
+    const modalElement = form.closest('.modal');
+    if (modalElement) {
+      // Aseguramos limpieza al cerrar modal
+      modalElement.addEventListener('hidden.bs.modal', () => {
+        // Limpiamos observadores
+        observers.forEach(obs => obs.disconnect());
+        observers = [];
+        
+        // Limpiamos datepicker
+        destroyDatePicker();
+        datePickerInstance = null;
+        
+        // Limpiamos choices
+        Object.values(choicesInstances).forEach(instance => {
+          if (instance && typeof instance.destroy === 'function') {
+            instance.destroy();
+          }
+        });
+        choicesInstances = {};
+        
+        console.log('Limpieza completa al cerrar modal');
+      });
+      
+      // Solo calculamos el total cuando se muestra el modal
+      modalElement.addEventListener('shown.bs.modal', () => {
+        updateRoomDetails(habitacionSelect.value);
+      });
+    }
+
+    // 12. Calcular total inicial
+    if (typeof calcularTotalModal === 'function') {
+      calcularTotalModal(form);
+    }
+
+  } catch (error) {
+    console.error("Error al preparar el formulario:", error);
+    if (typeof mostrarToast === 'function') {
+      window.mostrarToast("error", "Error al cargar datos para edición");
+    }
+  }
+}
+
+function initializeChoicesForBookingForm(clienteSelect, habitacionSelect, booking) {
+  // Destruir instancias anteriores correctamente
+  [clienteSelect, habitacionSelect].forEach(select => {
+    if (select.choices) {
+      select.choices.destroy();
+      delete select.choices;
+    }
+  });
+
+  // Configuración para v11.x
+  const baseConfig = {
+    removeItemButton: true,
+    searchEnabled: true,
+    shouldSort: false,
+    classNames: {
+      itemSelectable: 'choices__item--selectable',
+      itemDisabled: 'choices__item--disabled'
+    },
+    allowHTML: true,
+    searchPlaceholderValue: "Buscar...",
+    noResultsText: "No hay resultados",
+    itemSelectText: "Presiona para seleccionar"
+  };
+
+  // Inicializar selector de clientes
+  const clientChoices = new Choices(clienteSelect, {
+    ...baseConfig,
+    shouldSort: true
+  });
+  
+  clientChoices.setChoiceByValue(booking.cliente_id?.toString());
+
+  // Inicializar selector de habitaciones con eventos correctos para v11
+  const roomChoices = new Choices(habitacionSelect, {
+    ...baseConfig
+  });
+  
+  // En v11, debemos usar el evento change en el elemento subyacente
+  habitacionSelect.addEventListener('choice', function(event) {
+    const selectedValue = event.detail.choice.value;
+    if (selectedValue) {
+      const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
+      const hab = habitaciones.find(h => h.id == selectedValue);
+      const form = habitacionSelect.closest("form");
+
+      if (hab) {
+        form.querySelector("#tipo_habitacion").value = hab.tipo;
+        form.querySelector("#precio_noche").value = hab.precio_noche;
+        const numHuespedesInput = form.querySelector("#num_huespedes");
+        numHuespedesInput.max = hab.capacidad;
+        
+        if (parseInt(numHuespedesInput.value) > hab.capacidad) {
+          numHuespedesInput.value = hab.capacidad;
+        }
+        
+        calcularTotalModal(form);
+      }
+    }
+  });
+
+  // Renderizado personalizado para v11
+  roomChoices.config.templates = {
+    ...roomChoices.config.templates,
+    choice: function(classNames, data) {
+      const isDisabled = data.disabled;
+      const isCurrent = data.value === booking.habitacion_id?.toString();
+      
+      return `
+        <div class="${classNames.item} ${isDisabled ? classNames.itemDisabled : classNames.itemSelectable}" 
+             data-choice ${isDisabled ? 'data-choice-disabled' : 'data-choice-selectable'}
+             data-id="${data.id}" data-value="${data.value}">
+          <div class="d-flex justify-content-between align-items-center">
+            <span>${data.label}</span>
+            ${isDisabled ? '<span class="badge bg-danger ms-2">Ocupada</span>' : ''}
+            ${isCurrent ? '<span class="badge bg-success ms-2">Actual</span>' : ''}
+          </div>
+        </div>
+      `;
+    }
+  };
+
+  // Actualizar opciones desde el DOM
+  roomChoices.setChoices(
+    Array.from(habitacionSelect.options).map(option => ({
+      value: option.value,
+      label: option.textContent,
+      disabled: option.disabled,
+      selected: option.selected
+    })),
+    'value',
+    'label',
+    false
+  );
+  
+  // Establecer el valor seleccionado si existe
+  if (booking.habitacion_id) {
+    roomChoices.setChoiceByValue(booking.habitacion_id.toString());
+  }
+}
+
+function initializeChoicesCompatibles(clienteSelect, habitacionSelect, booking, form) {
+  // Destruir instancias anteriores
+  [clienteSelect, habitacionSelect].forEach(select => {
+    if (select.choices) {
+      select.choices.destroy();
+      select.choices = null;
+    }
+  });
+
+  const baseConfig = {
+    removeItemButton: true,
+    searchEnabled: true,
+    shouldSort: false,
+    allowHTML: true,
+    classNames: {
+      itemSelectable: 'choices__item--selectable',
+      itemDisabled: 'choices__item--disabled'
+    }
+  };
+
+  // Selector de clientes
+  new Choices(clienteSelect, {
+    ...baseConfig,
+    shouldSort: true
+  }).setChoiceByValue(booking.cliente_id?.toString());
+
+  // Selector de habitaciones
+  const roomChoices = new Choices(habitacionSelect, {
+    ...baseConfig,
+    callbackOnChange: (choice) => {
+      if (choice.value) {
+        handleRoomChangeCompat(choice.value, form);
+      }
+    }
+  });
+
+  // Configurar opciones
+  roomChoices.setChoices(
+    Array.from(habitacionSelect.options).map(option => ({
+      value: option.value,
+      label: option.text,
+      disabled: option.disabled,
+      selected: option.selected
+    })),
+    'value',
+    'label',
+    false
+  );
+}
+
+
+// ================ FUNCIONES AUXILIARES ================
+function initializeDatePickerCompat(form, booking) {
+  const input = form.querySelector("#datetimerange-input2");
+  
+  // Destruir instancia anterior
+  if (input.dateRangePicker && input.dateRangePicker.destroy) {
+      input.dateRangePicker.destroy();
+  }
+
+  // Nueva instancia
+  input.dateRangePicker = new DateRangePicker(input, {
+      timePicker: true,
+      autoApply: true,
+      startDate: moment.utc(booking.check_in),
+      endDate: moment.utc(booking.check_out),
+      locale: { format: "YYYY-MM-DD HH:mm" }
+  }, (start, end) => {
+      input.value = `${start.format("YYYY-MM-DD HH:mm")} - ${end.format("YYYY-MM-DD HH:mm")}`;
+      form.querySelector("#check_in").value = start.utc().format();
+      form.querySelector("#check_out").value = end.utc().format();
+      calcularTotalModal(form);
+  });
+}
+
+function updateRoomDetailsCompat(form, habitaciones, booking) {
+  const hab = habitaciones.find(h => h.id == booking.habitacion_id);
+  if (!hab) return;
+
+  form.querySelector("#tipo_habitacion").value = hab.tipo;
+  form.querySelector("#precio_noche").value = hab.precio_noche;
+  const numHuespedes = form.querySelector("#num_huespedes");
+  numHuespedes.max = hab.capacidad;
+  numHuespedes.value = Math.min(booking.num_huespedes || 1, hab.capacidad);
+}
+
+function handleRoomChangeCompat(roomId, form) {
+  const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
+  const hab = habitaciones.find(h => h.id == roomId);
+  if (hab) {
+      form.querySelector("#tipo_habitacion").value = hab.tipo;
+      form.querySelector("#precio_noche").value = hab.precio_noche;
+      calcularTotalModal(form);
+  }
+}
+
+function createChoiceTemplateCompat(classNames, data, booking) {
+  const div = document.createElement("div");
+  div.className = `${classNames.item} ${data.disabled ? classNames.itemDisabled : ""}`;
+  
+  const isCurrent = data.value === booking.habitacion_id?.toString();
+  let badge = "";
+  if (data.disabled) badge = `<span class="badge bg-danger">Ocupada</span>`;
+  if (isCurrent) badge = `<span class="badge bg-success">Actual</span>`;
+
+  div.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center">
+          <span>${data.label}</span>
+          ${badge}
+      </div>
+  `;
+  return div;
+}
+
+function initializeChoicesForBookingForm(clienteSelect, habitacionSelect, booking) {
+  // Destruir instancias anteriores correctamente
+  [clienteSelect, habitacionSelect].forEach(select => {
+    if (select.choices) {
+      select.choices.destroy();
+      delete select.choices;
+    }
+  });
+
+  // Configuración para v11.x
+  const baseConfig = {
+    removeItemButton: true,
+    searchEnabled: true,
+    shouldSort: false,
+    classNames: {
+      itemSelectable: 'choices__item--selectable',
+      itemDisabled: 'choices__item--disabled'
+    },
+    // Nuevos parámetros en v11
+    allowHTML: true,
+    searchPlaceholderValue: "Buscar...",
+    noResultsText: "No hay resultados",
+    itemSelectText: "Presiona para seleccionar"
+  };
+
+  // Inicializar selector de habitaciones
+  const roomChoices = new Choices(habitacionSelect, {
+    ...baseConfig,
+    // Configuración específica
+    onChange: (choice) => {
+      if (choice) {
+        const selectedValue = choice.value;
+        const selectedOption = habitacionSelect.querySelector(`option[value="${selectedValue}"]`);
+        
+        if (selectedOption && !selectedOption.disabled) {
+          const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
+          const hab = habitaciones.find(h => h.id == selectedValue);
+          const form = habitacionSelect.closest("form");
+
+          if (hab) {
+            form.querySelector("#tipo_habitacion").value = hab.tipo;
+            form.querySelector("#precio_noche").value = hab.precio_noche;
+            form.querySelector("#num_huespedes").max = hab.capacidad;
+            calcularTotalModal(form);
+          }
+        }
+      }
+    }
+  });
+
+  // Renderizado personalizado (v11)
+  roomChoices.setTemplates({
+    choice: ({ classNames }, data) => {
+      const isDisabled = data.disabled;
+      const isCurrent = data.value === booking.habitacion_id?.toString();
+      
+      return `
+        <div class="${classNames.item} ${isDisabled ? 'choices__item--disabled' : ''}" 
+             data-value="${data.value}"
+             data-choice-selectable>
+          <div class="d-flex justify-content-between align-items-center">
+            <span>${data.label}</span>
+            ${isDisabled ? '<span class="badge bg-danger ms-2">Ocupada</span>' : ''}
+            ${isCurrent ? '<span class="badge bg-success ms-2">Actual</span>' : ''}
+          </div>
+        </div>
+      `;
+    }
+  });
+
+  // Actualizar opciones desde el DOM
+  roomChoices.setChoices(
+    Array.from(habitacionSelect.options).map(option => ({
+      value: option.value,
+      label: option.text,
+      disabled: option.disabled,
+      selected: option.selected
+    })),
+    'value',
+    'label',
+    false
+  );
+}
+
+  function calcularTotalModal(formElement = document.getElementById("editBookingForm")) {
+    console.log(formElement);
+    const precioNocheInput = formElement.querySelector("#precio_noche");
+    const totalPagarInput = formElement.querySelector("#total_pagar");
+    const checkInValue = formElement.querySelector("#check_in")?.value;
+    const checkOutValue = formElement.querySelector("#check_out")?.value;
+
+    if (!checkInValue || !checkOutValue) {
+        totalPagarInput.value = "0.00";
         return;
     }
 
-    try {
-        // Cargar datos de clientes y habitaciones en paralelo
-        const [clientesResponse, habitacionesResponse] = await Promise.all([
-            fetch("/api/clients", {
-                headers: { Authorization: `Bearer ${token}` },
-            }),
-            fetch("/api/rooms", {
-                headers: { Authorization: `Bearer ${token}` },
-            }),
-        ]);
+    const checkIn = moment.utc(checkInValue);
+    const checkOut = moment.utc(checkOutValue);
 
-        const clientes = await clientesResponse.json();
-        const habitaciones = await habitacionesResponse.json();
-
-        // Guardar habitaciones en localStorage para uso posterior
-        localStorage.setItem("habitaciones", JSON.stringify(habitaciones));
-
-        // Preparar selects antes de inicializar Choices.js
-        const clienteSelect = form.querySelector("#nombreBooking");
-        const habitacionSelect = form.querySelector("#num_habitacion");
-
-        if (!clienteSelect || !habitacionSelect) {
-            console.error("No se encontraron los selectores #nombreBooking o #num_habitacion.");
-            return;
-        }
-
-        // Limpiar selects
-        clienteSelect.innerHTML = "";
-        habitacionSelect.innerHTML = "";
-
-        // Llenar select de clientes
-        clientes.forEach((cliente) => {
-            const option = document.createElement("option");
-            option.value = cliente.id;
-            option.textContent = cliente.nombre;
-            clienteSelect.appendChild(option);
-        });
-
-        // Llenar select de habitaciones (solo incluir disponibles)
-        if (habitaciones && habitaciones.length > 0) {
-            const habitacionesDisponibles = habitaciones.filter(
-          (hab) => hab.disponibilidad === "Disponible"
-            ); // Filtrar solo habitaciones disponibles
-
-            habitacionesDisponibles.forEach((hab) => {
-          const option = document.createElement("option");
-          option.value = hab.id;
-          option.textContent = `Habitación ${hab.num_habitacion}`;
-          habitacionSelect.appendChild(option);
-            });
-        } else {
-            console.warn("No se encontraron habitaciones disponibles.");
-        }
-
-        // Inicializar o reinicializar Choices.js
-        initializeChoicesForBookingForm(clienteSelect, habitacionSelect, booking);
-
-        // Formatear y establecer fechas
-        const checkIn = moment(booking.check_in);
-        const checkOut = moment(booking.check_out);
-
-        const checkInField = form.querySelector("#check_in");
-        if (checkInField) {
-            checkInField.value = checkIn.format("YYYY-MM-DDTHH:mm:ss");
-        } else {
-            console.error("No se encontró el campo #check_in en el formulario.");
-        }
-
-        const checkOutField = form.querySelector("#check_out");
-        if (checkOutField) {
-            checkOutField.value = checkOut.format("YYYY-MM-DDTHH:mm:ss");
-        } else {
-            console.error("No se encontró el campo #check_out en el formulario.");
-        }
-
-        const dateRangeInput2 = form.querySelector("#datetimerange-input2");
-        if (dateRangeInput2) {
-            // Prevenir entrada de teclado
-            dateRangeInput2.addEventListener("keydown", function (e) {
-                e.preventDefault();
-                return false;
-            });
-
-            // Establecer como solo lectura
-            dateRangeInput2.setAttribute("readonly", "readonly");
-
-            // Inicializar el DateRangePicker
-            new DateRangePicker(dateRangeInput2, {
-                timePicker: true,
-                alwaysShowCalendars: true,
-                autoApply: true,
-                startDate: moment(booking.check_in),
-                endDate: moment(booking.check_out),
-                locale: { format: "YYYY-MM-DD HH:mm" },
-                showDropdowns: true,
-            }, function (start, end) {
-                // Actualizar el input visible con el formato correcto
-                dateRangeInput2.value = start.format("YYYY-MM-DD HH:mm") + " - " + end.format("YYYY-MM-DD HH:mm");
-
-                // Actualizar los campos ocultos con el formato esperado por el servidor
-                form.querySelector("#check_in").value = start.format("YYYY-MM-DDTHH:mm:ss");
-                form.querySelector("#check_out").value = end.format("YYYY-MM-DDTHH:mm:ss");
-
-                calcularTotal(form);
-            });
-        } else {
-            console.error("No se encontró el campo #datetimerange-input2 en el formulario del modal.");
-        }
-
-        // Buscar la habitación seleccionada para mostrar sus detalles
-        const habitacionSeleccionada = habitaciones.find(
-            (h) => h.id == booking.habitacion_id
-        );
-        if (habitacionSeleccionada) {
-            const tipoHabitacionField = form.querySelector("#tipo_habitacion");
-            if (tipoHabitacionField) {
-                tipoHabitacionField.value = habitacionSeleccionada.tipo;
-            }
-
-            const numHuespedesField = form.querySelector("#num_huespedes");
-            if (numHuespedesField) {
-                numHuespedesField.max = habitacionSeleccionada.capacidad;
-                numHuespedesField.value =
-                    booking.num_huespedes || habitacionSeleccionada.capacidad;
-            }
-
-            const precioNocheField = form.querySelector("#precio_noche");
-            if (precioNocheField) {
-                precioNocheField.value = habitacionSeleccionada.precio_noche;
-            }
-        }
-
-        // Establecer otros campos
-        const totalPagarField = form.querySelector("#total_pagar");
-        if (totalPagarField) {
-            totalPagarField.value = booking.valor_reservacion;
-        }
-
-        const metodoPagoField = form.querySelector("#metodo_pago");
-        if (metodoPagoField) {
-            metodoPagoField.value = booking.metodo_pago;
-        }
-
-        const estadoReservaField = form.querySelector("#estado_reserva");
-        if (estadoReservaField) {
-            estadoReservaField.value = booking.estado;
-        }
-
-        const notasField = form.querySelector("#notas");
-        if (notasField) {
-            notasField.value = booking.notas || "";
-        }
-
-        // Calcular total
-        calcularTotal(form);
-    } catch (error) {
-        console.error("Error al preparar el formulario de reserva:", error);
+    if (checkIn.isValid() && checkOut.isValid()) {
+        const horas = checkOut.diff(checkIn, 'hours', true);
+        const dias = Math.ceil(horas / 24);
+        const precioPorNoche = parseFloat(precioNocheInput.value) || 0;
+        totalPagarInput.value = (dias * precioPorNoche).toFixed(2);
+    } else {
+        totalPagarInput.value = "0.00";
     }
-}
-
-// Función para inicializar Choices.js en el formulario de reserva
-function initializeChoicesForBookingForm(
-  clienteSelect,
-  habitacionSelect,
-  booking
-) {
-  // Destruir instancias previas si existen
-  if (clienteSelect.choicesInstance) {
-    clienteSelect.choicesInstance.destroy();
   }
 
-  if (habitacionSelect.choicesInstance) {
-    habitacionSelect.choicesInstance.destroy();
-  }
-
-  // Inicializar Choices para el selector de clientes
-  clienteSelect.choicesInstance = new Choices(clienteSelect, {
-    removeItemButton: true,
-    searchEnabled: true,
-    itemSelectText: "",
-    shouldSort: false,
-    addItems: false,
-    placeholderValue: "Seleccionar...",
-    placeholder: true,
-  });
-
-  // Inicializar Choices para el selector de habitaciones
-  habitacionSelect.choicesInstance = new Choices(habitacionSelect, {
-    removeItemButton: true,
-    searchEnabled: true,
-    itemSelectText: "",
-    shouldSort: false,
-    addItems: false,
-    placeholderValue: "Seleccionar...",
-    placeholder: true,
-  });
-
-  // Establecer los valores seleccionados
-  if (booking) {
-    clienteSelect.choicesInstance.setChoiceByValue(
-      booking.cliente_id.toString()
-    );
-    habitacionSelect.choicesInstance.setChoiceByValue(
-      booking.habitacion_id.toString()
-    );
-  }
-
-  // Configurar eventos de cambio
-  clienteSelect.addEventListener("change", function () {
-    const selectedValue = this.value;
-    console.log("Cliente seleccionado:", selectedValue);
-  });
-
-  habitacionSelect.addEventListener("change", function () {
-    const selectedValue = this.value;
-    console.log("Habitación seleccionada:", selectedValue);
-
-    // Actualizar información de la habitación
-    const habitaciones = JSON.parse(localStorage.getItem("habitaciones")) || [];
-    const habitacionSeleccionada = habitaciones.find(
-      (h) => h.id == selectedValue
-    );
-
-    if (habitacionSeleccionada) {
-      const form = this.closest("form");
-      form.querySelector("#tipo_habitacion").value =
-        habitacionSeleccionada.tipo;
-      form.querySelector("#num_huespedes").max =
-        habitacionSeleccionada.capacidad;
-      form.querySelector("#num_huespedes").value =
-        habitacionSeleccionada.capacidad;
-      form.querySelector("#precio_noche").value =
-        habitacionSeleccionada.precio_noche;
-      calcularTotal(form);
+  function applyTableHeaderTheme(head) {
+    const body = document.body;
+    let tableHead = document.getElementById(head);
+  
+    if (!tableHead) {
+      console.warn(`Observando cambios para aplicar tema en "${head}"...`);
+      const observer = new MutationObserver(() => {
+        tableHead = document.getElementById(head);
+        if (tableHead) {
+          observer.disconnect();
+          applyTheme(tableHead, body);
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      return;
     }
-  });
-}
-
-// Función para calcular el total a pagar
-function calcularTotal(form) {
-  const precioNocheInput = form.querySelector("#precio_noche");
-  const totalPagarInput = form.querySelector("#total_pagar");
-  const checkInValue = form.querySelector("#check_in")?.value;
-  const checkOutValue = form.querySelector("#check_out")?.value;
-
-  if (!checkInValue || !checkOutValue) {
-    totalPagarInput.value = "$0.00";
-    return;
+  
+    applyTheme(tableHead, body);
   }
-
-  const checkIn = moment(checkInValue);
-  const checkOut = moment(checkOutValue);
-
-  if (checkIn.isValid() && checkOut.isValid()) {
-    let horas = checkOut.diff(checkIn, "hours", true);
-    let dias = Math.ceil(horas / 24);
-    let precioPorNoche = parseFloat(precioNocheInput.value) || 0;
-    totalPagarInput.value =
-      dias > 0 ? `${(dias * precioPorNoche).toFixed(2)}` : "0.00";
+  
+  function applyTheme(tableHead, body) {
+    tableHead.classList.remove("custom-header-light", "custom-header-dark");
+    if (body.getAttribute("data-bs-theme") === "dark") {
+      tableHead.classList.add("custom-header-dark");
+    } else {
+      tableHead.classList.add("custom-header-light");
+    }
   }
-}
-
-function applyTableHeaderTheme(head) {
-  const body = document.body;
-
-  let tableHead = document.getElementById(head);
-  if (!tableHead) {
-    console.warn(`El elemento <thead> con ID "${head}" no está disponible. Observando cambios en el DOM...`);
-
-
-    return;
-  }
-
-  console.log(`El elemento <thead> con ID "${head}" ya está disponible.`);
-  tableHead.classList.remove("custom-header-light", "custom-header-dark");
-
-  if (body.getAttribute("data-bs-theme") === "dark") {
-    tableHead.classList.add("custom-header-dark");
-  } else {
-    tableHead.classList.add("custom-header-light");
-  }
-}
 
 function cleanTableContainer(bodyId) {
     // Obtener el elemento <tbody> por su ID

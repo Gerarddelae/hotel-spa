@@ -10,3 +10,4 @@ class Room(db.Model):
     amenidades = db.Column(db.Text, nullable=True)
     vista = db.Column(db.String(50), nullable=True)
     notas = db.Column(db.Text, nullable=True)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)

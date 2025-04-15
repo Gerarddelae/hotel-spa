@@ -1,3 +1,49 @@
-<h1>🗃️ Archivo</h1>
-<p>Aqui se registrara la informacion de interes en estilo de historial</p>
+<h1>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="40" stroke-width="2"> <path d="M3 4m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"></path> <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10"></path> <path d="M10 12l4 0"></path> </svg> 
+    Archivo</h1>
+<div>
+    <ul class="nav nav-tabs" id="archiveTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button
+                class="nav-link search active"
+                id="archive-list-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#archive-list-pane"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                data-path="/api/archives"
+                data-head="archiveHead"
+                data-body="archivesTable"
+            >
+                Registros Archivados
+            </button>
+        </li>
+    </ul>
 
+    <div class="tab-content">
+        <div
+            class="tab-pane fade show active"
+            id="archive-list-pane"
+            role="tabpanel"
+            aria-labelledby="archive-list-tab"
+        >
+            <div class="table-responsive">
+                <table 
+                    id="archivesTable"
+                    class="table table-striped table-bordered"
+                    data-toggle="table"
+                    data-search="true"
+                    data-pagination="true"
+                    data-show-toggle="true"
+                    data-show-refresh="true"
+                    data-show-columns="true"
+                    data-show-columns-toggle-all="true"
+                >
+                    <thead class="table-dark" id="archiveHead"></thead>
+                    <tbody id="archiveBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
